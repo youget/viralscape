@@ -1,0 +1,87 @@
+'use client'
+import { useState } from 'react'
+import { Home, Play, Bot, Star, ExternalLink } from 'lucide-react'
+
+const popupData = {
+  tiktok: {
+    emoji: '🚧',
+    title: "TikTok? Hold up bestie.",
+    desc: "We're still trying to crack TikTok's API without catching a lawsuit. Legal team is 'on it.' Probably napping though.",
+  },
+  instagram: {
+    emoji: '🚧',
+    title: "IG? Not yet fam.",
+    desc: "Meta said 'talk to my lawyer.' So yeah... we're working on it. Somewhere between never and eventually.",
+  },
+  'coming-soon': {
+    emoji: '👨‍🍳',
+    title: "Still cooking...",
+    desc: "This feature is marinating in the oven. Come back soon, it's gonna be bussin fr fr.",
+  },
+  'api-key': {
+    emoji: '🔑',
+    title: "API Key needed.",
+    desc: "This one needs a Pollinations API key to work. Get yours at pollinations.ai — it's worth it bestie.",
+  },
+}
+
+const subMenus = {
+  videos: [
+    { label: 'YouTube', icon: '▶', href: '/videos' },
+    { label: 'TikTok', icon: '♪', popup: 'tiktok' },
+    { label: 'Instagram', icon: '◉', popup: 'instagram' },
+  ],
+  ai: [
+    { label: 'Chat', icon: '💬', popup: 'coming-soon' },
+    { label: 'Image', icon: '🖼️', popup: 'coming-soon' },
+    { label: 'Voice', icon: '🎤', popup: 'api-key' },
+    { label: 'Video', icon: '🎬', popup: 'api-key' },
+  ],
+  favorites: [
+    { label: 'Videos', icon: '▶', popup: 'coming-soon' },
+    { label: 'AI Stuff', icon: '⚡', popup: 'coming-soon' },
+  ],
+}
+
+const navItems = [
+  { icon: Home, label: 'Home', href: '/' },
+  { icon: Play, label: 'Videos', menu: 'videos' },
+  { icon: Bot, label: 'AI', menu: 'ai' },
+  { icon: Star, label: 'Favs', menu: 'favorites' },
+  { icon: ExternalLink, label: 'Pollin', href: 'https://enter.pollinations.ai', external: true },
+]
+
+export default function BottomNav() {
+  const [activeMenu, setActiveMenu] = useState(null)
+  const [popup, setPopup] = useState(null)
+
+  const handleNav = (item) => {
+    if (item.href && !item.external) {
+      window.location.href = item.href
+      setActiveMenu(null)
+    } else if (item.external) {
+      window.open(item.href, '_blank')
+    } else if (item.menu) {
+      setActiveMenu(activeMenu === item.menu ? null : item.menu)
+    }
+  }
+
+  const handleSubItem = (sub) => {
+    setActiveMenu(null)
+    if (sub.popup) {
+      setPopup(sub.popup)
+    } else if (sub.href) {
+      window.location.href = sub.href
+    }
+  }
+
+  return (
+    <>
+      {activeMenu && (
+        <div className="fixed inset-0 z-30" onClick={() => setActiveMenu(null)}>
+          <div
+            className="absolute bottom-[68px] left-0 right-0 vs-card border-t vs-border rounded-t-2xl p-4 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              
