@@ -1,37 +1,33 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { Send, Image, MessageSquare, Mic, Film, Sparkles, Shuffle, Download, Heart, Loader2, ChevronDown, X, ExternalLink } from 'lucide-react'
+import { Send, MessageSquare, Mic, Film, Sparkles, Shuffle, Download, Heart, Loader2, ChevronDown, ExternalLink, Key, X, Play, Music, Trash2 } from 'lucide-react'
 
 const FAV_AI_KEY = 'vs-fav-ai'
 const RECENT_KEY = 'vs-recent-ai'
+const USER_KEY_STORAGE = 'vs-user-polli-key'
+const FLUX2_KEY = 'vs-flux2dev-usage'
 
 const CHAT_MODELS = [
-  { id: 'qwen-safety', label: 'Qwen3Guard 8B', desc: '250K resp', free: true },
-  { id: 'qwen-character', label: 'Qwen Character', desc: '1M resp', free: true },
-  { id: 'nova-fast', label: 'Amazon Nova Micro', desc: '12.2K resp', free: true },
-  { id: 'gemini-fast', label: 'Gemini 2.5 Flash', desc: '4.4K resp', free: true, tags: 'vision search code' },
-  { id: 'gemini-search', label: 'Gemini Search', desc: '2.8K resp', free: true, tags: 'search' },
-  { id: 'qwen-coder', label: 'Qwen3 Coder 30B', desc: '2.2K resp', free: true },
-  { id: 'mistral', label: 'Mistral Small 3.2', desc: '1.7K resp', free: true },
-  { id: 'perplexity-fast', label: 'Perplexity Sonar', desc: '850 resp', free: true, tags: 'search' },
-  { id: 'openai-fast', label: 'GPT-5 Nano', desc: '1.1K resp', free: false },
-  { id: 'openai', label: 'GPT-5 Mini', desc: '950 resp', free: false },
-  { id: 'minimax', label: 'MiniMax M2.5', desc: '500 resp', free: false },
-  { id: 'deepseek', label: 'DeepSeek V3.2', desc: '250 resp', free: false },
+  { id: 'qwen-safety', label: 'Safe Mode', tag: '🛡️', desc: 'General chat', free: true },
+  { id: 'qwen-character', label: 'Unhinged Mode', tag: '🔥', desc: 'Creative & roleplay', free: true },
+  { id: 'gemini-fast', label: 'Pro Mode', tag: '🔑', desc: 'Vision, search, code', free: false },
 ]
 
-const FREE_IMG_MODELS = [
-  { id: 'flux', label: 'Flux Schnell', desc: '4.8K imgs', free: true },
-  { id: 'zimage', label: 'Z-Image Turbo', desc: '4.3K imgs', free: true },
-  { id: 'imagen-4', label: 'Imagen 4', desc: '400 imgs', free: true, alpha: true },
-  { id: 'grok-imagine', label: 'Grok Imagine', desc: '400 imgs', free: true, alpha: true },
+const FREE_IMG = [
+  { id: 'flux', label: 'Flux Schnell', desc: '4.8K imgs', type: 'free' },
+  { id: 'zimage', label: 'Z-Image Turbo', desc: '4.3K imgs', type: 'free' },
 ]
 
-const BYOP_IMG_MODELS = [
-  { id: 'flux-2-dev', label: 'FLUX.2 Dev', desc: '1K imgs' },
-  { id: 'klein', label: 'FLUX.2 Klein 4B', desc: '100 imgs' },
-  { id: 'klein-large', label: 'FLUX.2 Klein 9B', desc: '85 imgs' },
-  { id: 'gptimage', label: 'GPT Image 1 Mini', desc: '75 imgs' },
+const LIMITED_IMG = [
+  { id: 'flux-2-dev', label: 'FLUX.2 Dev', desc: '2/day free', type: 'limited' },
+]
+
+const BYOP_IMG = [
+  { id: 'imagen-4', label: 'Imagen 4', desc: '400 imgs' },
+  { id: 'grok-imagine', label: 'Grok Imagine', desc: '400 imgs' },
+  { id: 'klein', label: 'Klein 4B', desc: '100 imgs' },
+  { id: 'klein-large', label: 'Klein 9B', desc: '85 imgs' },
+  { id: 'gptimage', label: 'GPT Image', desc: '75 imgs' },
 ]
 
 const SIZES = [
@@ -41,6 +37,8 @@ const SIZES = [
   { label: '4:3', w: 1152, h: 896 },
   { label: '3:4', w: 896, h: 1152 },
 ]
+
+const VOICES = ['alloy','echo','nova','shimmer','onyx','fable','coral','sage','rachel','bella','charlotte','sarah','adam','josh','daniel','james']
 
 const RANDOM_PROMPTS = [
   'A cat wearing a tiny business suit in a board meeting',
@@ -57,50 +55,48 @@ const RANDOM_PROMPTS = [
   'A capybara relaxing in a hot tub with sunglasses',
 ]
 
-const BYOP_POPUP = {
-  emoji: '🔑',
-  title: 'Premium Model — BYOP',
-  desc: 'This model needs your own Pollinations API key (Bring Your Own Pollen). Get one at pollinations.ai — it unlocks the good stuff.',
-  link: 'https://pollinations.ai',
+const ERR = {
+  quota_exceeded: { emoji: '😭', title: "Free vibes ran out bestie", desc: "Your daily pollen is gone. Drop your own API key to keep the party going, or come back tomorrow for a refill." },
+  invalid_key: { emoji: '🫠', title: "That key ain't it chief", desc: "Double check your API key and try again. Make sure you copied the whole thing." },
+  user_key_required: { emoji: '🎟️', title: "VIP pass needed", desc: "This feature needs your own API key. Think of it as a backstage pass to the cool stuff." },
+  server_error: { emoji: '💤', title: "The AI took a nap", desc: "Something went wrong on our end. Give it another shot in a sec." },
+  forbidden: { emoji: '🚫', title: "Access denied", desc: "The bouncer said no. Your key might not have access to this model." },
+  api_error: { emoji: '🫣', title: "Something went sideways", desc: "Give it another shot. If it keeps happening, the AI might be having a bad day." },
 }
 
-const KEY_POPUP = {
-  emoji: '🔑',
-  title: 'API Key Required',
-  desc: 'This feature requires a Pollinations API key to work. Head over to pollinations.ai to get yours!',
-  link: 'https://pollinations.ai',
-}
+function getRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]') } catch { return [] } }
+function addRecent(item) { const l = getRecent(); l.unshift(item); const t = l.slice(0, 10); localStorage.setItem(RECENT_KEY, JSON.stringify(t)); return t }
+function getFavAI() { try { return JSON.parse(localStorage.getItem(FAV_AI_KEY) || '[]') } catch { return [] } }
+function addFavAI(item) { const l = getFavAI(); l.unshift(item); localStorage.setItem(FAV_AI_KEY, JSON.stringify(l)) }
+function getUserKey() { try { return localStorage.getItem(USER_KEY_STORAGE) || '' } catch { return '' } }
+function saveUserKey(k) { localStorage.setItem(USER_KEY_STORAGE, k) }
+function clearUserKey() { localStorage.removeItem(USER_KEY_STORAGE) }
 
-function getRecent() {
-  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]') } catch { return [] }
+function getFlux2Usage() {
+  try {
+    const d = JSON.parse(localStorage.getItem(FLUX2_KEY) || '{}')
+    if (d.date !== new Date().toDateString()) return { date: new Date().toDateString(), count: 0 }
+    return d
+  } catch { return { date: new Date().toDateString(), count: 0 } }
 }
-
-function addRecent(item) {
-  const list = getRecent()
-  list.unshift(item)
-  const trimmed = list.slice(0, 10)
-  localStorage.setItem(RECENT_KEY, JSON.stringify(trimmed))
-  return trimmed
-}
-
-function getFavAI() {
-  try { return JSON.parse(localStorage.getItem(FAV_AI_KEY) || '[]') } catch { return [] }
-}
-
-function addFavAI(item) {
-  const list = getFavAI()
-  list.unshift(item)
-  localStorage.setItem(FAV_AI_KEY, JSON.stringify(list))
+function addFlux2Usage() {
+  const u = getFlux2Usage(); u.count += 1
+  localStorage.setItem(FLUX2_KEY, JSON.stringify(u)); return u
 }
 
 export default function AIPage() {
   const [tab, setTab] = useState('chat')
-  const [popup, setPopup] = useState(null)
+  const [balance, setBalance] = useState(null)
+  const [userKey, setUserKey] = useState('')
+  const [showKeyPopup, setShowKeyPopup] = useState(false)
+  const [keyInput, setKeyInput] = useState('')
+  const [keyReason, setKeyReason] = useState('')
+  const [pendingAction, setPendingAction] = useState(null)
 
   const [chatModel, setChatModel] = useState('qwen-safety')
   const [showModelPicker, setShowModelPicker] = useState(false)
   const [chatMessages, setChatMessages] = useState([
-    { role: 'assistant', content: "Yo what's good! I'm your AI buddy. Pick a model above and ask me anything — I promise I'm only slightly unhinged." }
+    { role: 'assistant', content: "Yo what's good! Pick a mode above and ask me anything — I'm only slightly unhinged." }
   ])
   const [chatInput, setChatInput] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
@@ -112,108 +108,187 @@ export default function AIPage() {
   const [imgLoading, setImgLoading] = useState(false)
   const [imgResult, setImgResult] = useState(null)
   const [imgError, setImgError] = useState(null)
+  const [enhance, setEnhance] = useState(false)
   const [recent, setRecent] = useState([])
-  const [enhancing, setEnhancing] = useState(false)
+
+  const [voiceMode, setVoiceMode] = useState('tts')
+  const [voiceText, setVoiceText] = useState('')
+  const [voiceVoice, setVoiceVoice] = useState('nova')
+  const [voiceDuration, setVoiceDuration] = useState(30)
+  const [voiceLoading, setVoiceLoading] = useState(false)
+  const [voiceResult, setVoiceResult] = useState(null)
+  const [voiceError, setVoiceError] = useState(null)
+
+  const [videoPrompt, setVideoPrompt] = useState('')
+  const [videoDuration, setVideoDuration] = useState(5)
+  const [videoLoading, setVideoLoading] = useState(false)
+  const [videoResult, setVideoResult] = useState(null)
+  const [videoError, setVideoError] = useState(null)
+
+  const [errorPopup, setErrorPopup] = useState(null)
 
   useEffect(() => {
     setRecent(getRecent())
+    setUserKey(getUserKey())
+    fetchBalance()
     const params = new URLSearchParams(window.location.search)
+    const t = params.get('tab')
+    if (t && ['chat', 'image', 'voice', 'video'].includes(t)) setTab(t)
     const p = params.get('prompt')
-    if (p) {
-      setImgPrompt(p)
-      setTab('image')
-    }
+    if (p) { setImgPrompt(p); setTab('image') }
   }, [])
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [chatMessages])
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatMessages])
+
+  async function fetchBalance() {
+    try {
+      const res = await fetch('/api/balance')
+      const data = await res.json()
+      setBalance(data.balance)
+    } catch { setBalance(null) }
+  }
+
+  function requireKey(reason, action) {
+    const k = getUserKey()
+    if (k) { setUserKey(k); if (action) action(k); return true }
+    setKeyReason(reason)
+    setPendingAction(() => action)
+    setKeyInput('')
+    setShowKeyPopup(true)
+    return false
+  }
+
+  function handleKeySave() {
+    if (!keyInput.trim()) return
+    saveUserKey(keyInput.trim())
+    setUserKey(keyInput.trim())
+    setShowKeyPopup(false)
+    if (pendingAction) pendingAction(keyInput.trim())
+    setPendingAction(null)
+  }
+
+  function handleKeyClear() {
+    clearUserKey()
+    setUserKey('')
+  }
+
+  function handleApiError(err) {
+    if (err === 'quota_exceeded') {
+      setKeyReason('quota')
+      setShowKeyPopup(true)
+      return
+    }
+    setErrorPopup(ERR[err] || ERR.api_error)
+  }
+
+  function switchTab(t) {
+    if (t === 'voice' || t === 'video') {
+      const k = getUserKey()
+      if (!k) {
+        requireKey(t === 'voice' ? 'voice' : 'video', () => setTab(t))
+        return
+      }
+    }
+    setTab(t)
+  }
 
   const currentChatModel = CHAT_MODELS.find(m => m.id === chatModel) || CHAT_MODELS[0]
 
   async function handleChat(e) {
     e.preventDefault()
     if (!chatInput.trim() || chatLoading) return
-
     if (!currentChatModel.free) {
-      setPopup('byop')
-      return
+      requireKey('pro_chat', (k) => { doChat(chatInput.trim(), k) })
+      if (!getUserKey()) return
     }
+    doChat(chatInput.trim(), getUserKey())
+  }
 
-    const userMsg = { role: 'user', content: chatInput.trim() }
-    const newMessages = [...chatMessages, userMsg]
-    setChatMessages(newMessages)
+  async function doChat(text, uKey) {
+    const userMsg = { role: 'user', content: text }
+    const newMsgs = [...chatMessages, userMsg]
+    setChatMessages(newMsgs)
     setChatInput('')
     setChatLoading(true)
     try {
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'chat', messages: newMessages, model: chatModel }),
+        body: JSON.stringify({
+          action: 'chat',
+          messages: newMsgs,
+          model: chatModel,
+          userKey: !currentChatModel.free ? uKey : undefined,
+        }),
       })
       const data = await res.json()
-      setChatMessages([...newMessages, { role: 'assistant', content: data.result || 'Bruh I got nothing. Try again?' }])
+      if (data.error) { handleApiError(data.error); setChatLoading(false); return }
+      setChatMessages([...newMsgs, { role: 'assistant', content: data.result || 'Bruh I got nothing. Try again?' }])
     } catch {
-      setChatMessages([...newMessages, { role: 'assistant', content: 'Something broke. My brain lagged. Try again?' }])
+      setChatMessages([...newMsgs, { role: 'assistant', content: 'Something broke. My brain lagged. Try again?' }])
     }
     setChatLoading(false)
-  }
-
-  function handleClearChat() {
-    setChatMessages([
-      { role: 'assistant', content: "Fresh start! What's on your mind?" }
-    ])
-  }
-
-  function handleRandomPrompt() {
-    const r = RANDOM_PROMPTS[Math.floor(Math.random() * RANDOM_PROMPTS.length)]
-    setImgPrompt(r)
-  }
-
-  async function handleEnhance() {
-    if (!imgPrompt.trim() || enhancing) return
-    setEnhancing(true)
-    try {
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'enhance', prompt: imgPrompt }),
-      })
-      const data = await res.json()
-      if (data.result) setImgPrompt(data.result)
-    } catch {}
-    setEnhancing(false)
+    fetchBalance()
   }
 
   async function handleGenerate() {
     if (!imgPrompt.trim() || imgLoading) return
+
+    const isBYOP = BYOP_IMG.some(m => m.id === imgModel)
+    if (isBYOP) {
+      requireKey('byop_image', (k) => doGenerate(k))
+      if (!getUserKey()) return
+    }
+
+    if (imgModel === 'flux-2-dev') {
+      const usage = getFlux2Usage()
+      if (usage.count >= 2 && !getUserKey()) {
+        requireKey('flux2_limit', (k) => doGenerate(k))
+        return
+      }
+    }
+
+    doGenerate(getUserKey())
+  }
+
+  async function doGenerate(uKey) {
     setImgLoading(true)
     setImgError(null)
     setImgResult(null)
+    const size = SIZES[imgSize]
+    const seed = Math.floor(Math.random() * 999999)
     try {
-      const size = SIZES[imgSize]
-      const encoded = encodeURIComponent(imgPrompt.trim())
-      const seed = Math.floor(Math.random() * 999999)
-      const url = `https://image.pollinations.ai/prompt/${encoded}?width=${size.w}&height=${size.h}&model=${imgModel}&seed=${seed}&nologo=true&safe=true`
-
-      const res = await fetch(url)
-      if (!res.ok) throw new Error('Generation failed')
-
-      const blob = await res.blob()
-      const imgUrl = URL.createObjectURL(blob)
-
-      setImgResult({ url: imgUrl, blobUrl: url, prompt: imgPrompt, model: imgModel, size: size.label })
-      const newRecent = addRecent({ url, prompt: imgPrompt, model: imgModel, size: size.label })
+      const isBYOP = BYOP_IMG.some(m => m.id === imgModel)
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'image',
+          prompt: imgPrompt.trim(),
+          model: imgModel,
+          width: size.w,
+          height: size.h,
+          seed,
+          enhance: enhance || undefined,
+          userKey: isBYOP ? uKey : undefined,
+        }),
+      })
+      const data = await res.json()
+      if (data.error) { handleApiError(data.error); setImgLoading(false); return }
+      setImgResult({ url: data.image, prompt: imgPrompt, model: imgModel, size: size.label, seed })
+      const newRecent = addRecent({ url: data.image, prompt: imgPrompt, model: imgModel, size: size.label, seed })
       setRecent(newRecent)
+      if (imgModel === 'flux-2-dev') addFlux2Usage()
     } catch (err) {
       setImgError(err.message)
     }
     setImgLoading(false)
+    fetchBalance()
   }
 
   function handleSaveAI() {
     if (!imgResult) return
-    addFavAI({ url: imgResult.blobUrl, prompt: imgResult.prompt, model: imgResult.model, size: imgResult.size })
+    addFavAI({ url: imgResult.url, prompt: imgResult.prompt, model: imgResult.model, size: imgResult.size, seed: imgResult.seed })
     alert('Saved to favorites!')
   }
 
@@ -225,41 +300,132 @@ export default function AIPage() {
     a.click()
   }
 
-  function handleBYOPModel() {
-    setPopup('byop')
+  async function handleVoiceGenerate() {
+    if (!voiceText.trim() || voiceLoading) return
+    const k = getUserKey()
+    if (!k) { requireKey('voice', (k2) => doVoice(k2)); return }
+    doVoice(k)
+  }
+
+  async function doVoice(k) {
+    setVoiceLoading(true)
+    setVoiceError(null)
+    setVoiceResult(null)
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'audio',
+          prompt: voiceText.trim(),
+          model: voiceMode === 'tts' ? 'elevenlabs' : 'elevenmusic',
+          voice: voiceMode === 'tts' ? voiceVoice : undefined,
+          duration: voiceMode === 'music' ? voiceDuration : undefined,
+          userKey: k,
+        }),
+      })
+      const data = await res.json()
+      if (data.error) { handleApiError(data.error); setVoiceLoading(false); return }
+      setVoiceResult(data.audio)
+    } catch {
+      setVoiceError('Generation failed. Try again?')
+    }
+    setVoiceLoading(false)
+  }
+
+  async function handleVideoGenerate() {
+    if (!videoPrompt.trim() || videoLoading) return
+    const k = getUserKey()
+    if (!k) { requireKey('video', (k2) => doVideo(k2)); return }
+    doVideo(k)
+  }
+
+  async function doVideo(k) {
+    setVideoLoading(true)
+    setVideoError(null)
+    setVideoResult(null)
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'video',
+          prompt: videoPrompt.trim(),
+          model: 'grok-video',
+          duration: videoDuration,
+          userKey: k,
+        }),
+      })
+      const data = await res.json()
+      if (data.error) { handleApiError(data.error); setVideoLoading(false); return }
+      setVideoResult(data.video)
+    } catch {
+      setVideoError('Generation failed. Try again?')
+    }
+    setVideoLoading(false)
   }
 
   const tabs = [
     { id: 'chat', label: 'Chat', icon: MessageSquare },
-    { id: 'image', label: 'Image', icon: Image },
+    { id: 'image', label: 'Image', icon: Sparkles },
     { id: 'voice', label: 'Voice', icon: Mic },
     { id: 'video', label: 'Video', icon: Film },
   ]
+
+  const flux2Usage = getFlux2Usage()
 
   return (
     <div className="px-4 py-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-black vs-text text-center mb-1">
         AI <span className="vs-gradient-text">Playground</span>
       </h1>
-      <p className="text-xs vs-text-sub text-center mb-2">
+      <p className="text-xs vs-text-sub text-center mb-3">
         create unhinged stuff with artificial brainpower
       </p>
-      <p className="text-[10px] text-center mb-5 px-3 py-1.5 rounded-full vs-card border vs-border inline-flex mx-auto items-center gap-1" style={{ display: 'flex', width: 'fit-content', margin: '0 auto 20px auto' }}>
-        <Sparkles size={10} style={{ color: 'var(--vs-accent)' }} />
-        <span className="vs-text-sub">1 pollen/day free — BYOP for premium</span>
-      </p>
 
+      {/* Balance */}
+      <div className="flex items-center justify-center gap-2 mb-5">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full vs-card border vs-border text-[10px]">
+          <Sparkles size={10} style={{ color: 'var(--vs-accent)' }} />
+          {balance !== null ? (
+            <span className="vs-text-sub">
+              {balance > 0
+                ? `${balance.toFixed(2)} pollen left`
+                : 'Pollen depleted'
+              }
+            </span>
+          ) : (
+            <span className="vs-text-sub">Loading balance...</span>
+          )}
+          {balance !== null && balance <= 0 && (
+            <button
+              onClick={() => { setKeyReason('quota'); setShowKeyPopup(true) }}
+              className="ml-1 px-2 py-0.5 rounded text-[9px] font-bold text-white"
+              style={{ backgroundColor: 'var(--vs-accent)' }}
+            >
+              Add Key
+            </button>
+          )}
+        </div>
+        {userKey && (
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full vs-card border vs-border text-[10px]">
+            <Key size={9} style={{ color: 'var(--vs-accent)' }} />
+            <span className="vs-text-sub">Your key active</span>
+            <button onClick={handleKeyClear} className="ml-1 vs-text-sub hover:underline text-[9px]">
+              remove
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Tabs */}
       <div className="flex gap-1 mb-6 vs-card border vs-border rounded-xl p-1">
         {tabs.map((t) => {
           const Icon = t.icon
           return (
             <button
               key={t.id}
-              onClick={() => {
-                if (t.id === 'voice') { setPopup('key'); return }
-                if (t.id === 'video') { setPopup('key'); return }
-                setTab(t.id)
-              }}
+              onClick={() => switchTab(t.id)}
               className="flex-1 py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
               style={{
                 backgroundColor: tab === t.id ? 'var(--vs-accent)' : 'transparent',
@@ -273,64 +439,52 @@ export default function AIPage() {
         })}
       </div>
 
-      {/* ===== CHAT TAB ===== */}
+      {/* ===== CHAT ===== */}
       {tab === 'chat' && (
-        <div className="flex flex-col" style={{ height: 'calc(100vh - 320px)' }}>
-          {/* Model picker */}
+        <div className="flex flex-col" style={{ height: 'calc(100vh - 340px)' }}>
           <div className="mb-3">
             <button
               onClick={() => setShowModelPicker(!showModelPicker)}
               className="flex items-center gap-2 px-3 py-2 rounded-xl vs-card border vs-border text-xs font-semibold vs-text w-full"
             >
-              <MessageSquare size={12} style={{ color: 'var(--vs-accent)' }} />
+              <span>{currentChatModel.tag}</span>
               <span className="flex-1 text-left">{currentChatModel.label}</span>
-              <span className="vs-text-sub">{currentChatModel.desc}</span>
-              <ChevronDown size={14} className="vs-text-sub" style={{ transform: showModelPicker ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+              <span className="vs-text-sub text-[10px]">{currentChatModel.desc}</span>
+              <ChevronDown size={14} className="vs-text-sub" style={{ transform: showModelPicker ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
             </button>
-
             {showModelPicker && (
-              <div className="vs-card border vs-border rounded-xl mt-1 max-h-60 overflow-y-auto">
+              <div className="vs-card border vs-border rounded-xl mt-1">
                 {CHAT_MODELS.map((m) => (
                   <button
                     key={m.id}
                     onClick={() => {
-                      if (!m.free) { setPopup('byop'); setShowModelPicker(false); return }
-                      setChatModel(m.id)
-                      setShowModelPicker(false)
+                      if (!m.free && !getUserKey()) {
+                        requireKey('pro_chat', () => { setChatModel(m.id); setShowModelPicker(false) })
+                        return
+                      }
+                      setChatModel(m.id); setShowModelPicker(false)
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs vs-hover transition-colors border-b vs-border last:border-b-0"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs vs-hover border-b vs-border last:border-b-0"
                     style={{ color: chatModel === m.id ? 'var(--vs-accent)' : 'var(--vs-text)' }}
                   >
+                    <span>{m.tag}</span>
                     <span className="flex-1 text-left font-semibold">{m.label}</span>
-                    <span className="vs-text-sub">{m.desc}</span>
-                    {m.tags && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full vs-bg2 vs-text-sub">{m.tags}</span>
-                    )}
-                    {!m.free && <span>🔑</span>}
+                    <span className="vs-text-sub text-[10px]">{m.desc}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Clear chat */}
-          <button
-            onClick={handleClearChat}
-            className="text-[10px] vs-text-sub hover:underline mb-2 self-end"
-          >
+          <button onClick={() => setChatMessages([{ role: 'assistant', content: "Fresh start! What's on your mind?" }])} className="text-[10px] vs-text-sub hover:underline mb-2 self-end">
             Clear chat
           </button>
 
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto flex flex-col gap-3 mb-4 pr-1">
             {chatMessages.map((msg, i) => (
               <div
                 key={i}
-                className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-                  msg.role === 'user'
-                    ? 'self-end text-white rounded-br-sm'
-                    : 'self-start vs-card border vs-border vs-text rounded-bl-sm'
-                }`}
+                className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'self-end text-white rounded-br-sm' : 'self-start vs-card border vs-border vs-text rounded-bl-sm'}`}
                 style={msg.role === 'user' ? { backgroundColor: 'var(--vs-accent)' } : {}}
               >
                 {msg.content}
@@ -344,127 +498,77 @@ export default function AIPage() {
             <div ref={chatEndRef} />
           </div>
 
-          {/* Input */}
           <form onSubmit={handleChat} className="flex gap-2">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Say something..."
-              className="flex-1 py-3 px-4 rounded-xl vs-card border vs-border text-sm vs-text outline-none"
-              style={{ backgroundColor: 'var(--vs-card)' }}
-            />
-            <button
-              type="submit"
-              disabled={chatLoading}
-              className="vs-btn w-11 h-11 rounded-xl flex-shrink-0"
-            >
-              <Send size={16} />
-            </button>
+            <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Say something..." className="flex-1 py-3 px-4 rounded-xl vs-card border vs-border text-sm vs-text outline-none" style={{ backgroundColor: 'var(--vs-card)' }} />
+            <button type="submit" disabled={chatLoading} className="vs-btn w-11 h-11 rounded-xl flex-shrink-0"><Send size={16} /></button>
           </form>
         </div>
       )}
 
-      {/* ===== IMAGE TAB ===== */}
+      {/* ===== IMAGE ===== */}
       {tab === 'image' && (
         <div>
-          {/* Model selection */}
           <div className="mb-4">
             <p className="text-xs font-semibold vs-text mb-2">Model</p>
             <div className="flex flex-wrap gap-2">
-              {FREE_IMG_MODELS.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => setImgModel(m.id)}
+              {FREE_IMG.map((m) => (
+                <button key={m.id} onClick={() => setImgModel(m.id)}
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                  style={{
-                    backgroundColor: imgModel === m.id ? 'var(--vs-accent)' : 'var(--vs-card)',
-                    color: imgModel === m.id ? '#fff' : 'var(--vs-text-sub)',
-                    border: `1px solid ${imgModel === m.id ? 'var(--vs-accent)' : 'var(--vs-border)'}`,
-                  }}
+                  style={{ backgroundColor: imgModel === m.id ? 'var(--vs-accent)' : 'var(--vs-card)', color: imgModel === m.id ? '#fff' : 'var(--vs-text-sub)', border: `1px solid ${imgModel === m.id ? 'var(--vs-accent)' : 'var(--vs-border)'}` }}
                 >
-                  {m.label} {m.alpha ? '⚠️' : '✨'}
+                  {m.label} ✨
                 </button>
               ))}
-              {BYOP_IMG_MODELS.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={handleBYOPModel}
+              {LIMITED_IMG.map((m) => (
+                <button key={m.id} onClick={() => setImgModel(m.id)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  style={{ backgroundColor: imgModel === m.id ? 'var(--vs-accent)' : 'var(--vs-card)', color: imgModel === m.id ? '#fff' : 'var(--vs-text-sub)', border: `1px solid ${imgModel === m.id ? 'var(--vs-accent)' : 'var(--vs-border)'}` }}
+                >
+                  {m.label} ⚡ {flux2Usage.count}/2
+                </button>
+              ))}
+              {BYOP_IMG.map((m) => (
+                <button key={m.id}
+                  onClick={() => { requireKey('byop_image', () => setImgModel(m.id)) }}
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub"
                 >
                   {m.label} 🔑
                 </button>
               ))}
             </div>
-            <p className="text-[10px] vs-text-sub mt-1.5">
-              ✨ Free • ⚠️ Alpha (experimental) • 🔑 BYOP (needs key)
-            </p>
+            <p className="text-[10px] vs-text-sub mt-1.5">✨ Free • ⚡ Limited daily • 🔑 Needs key</p>
           </div>
 
-          {/* Size selection */}
           <div className="mb-4">
             <p className="text-xs font-semibold vs-text mb-2">Size</p>
             <div className="flex gap-2">
               {SIZES.map((s, i) => (
-                <button
-                  key={i}
-                  onClick={() => setImgSize(i)}
+                <button key={i} onClick={() => setImgSize(i)}
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                  style={{
-                    backgroundColor: imgSize === i ? 'var(--vs-accent)' : 'var(--vs-card)',
-                    color: imgSize === i ? '#fff' : 'var(--vs-text-sub)',
-                    border: `1px solid ${imgSize === i ? 'var(--vs-accent)' : 'var(--vs-border)'}`,
-                  }}
-                >
-                  {s.label}
-                </button>
+                  style={{ backgroundColor: imgSize === i ? 'var(--vs-accent)' : 'var(--vs-card)', color: imgSize === i ? '#fff' : 'var(--vs-text-sub)', border: `1px solid ${imgSize === i ? 'var(--vs-accent)' : 'var(--vs-border)'}` }}
+                >{s.label}</button>
               ))}
             </div>
           </div>
 
-          {/* Prompt input */}
           <div className="mb-4">
             <p className="text-xs font-semibold vs-text mb-2">Prompt</p>
-            <textarea
-              value={imgPrompt}
-              onChange={(e) => setImgPrompt(e.target.value)}
-              placeholder="Describe what you want to see..."
-              rows={3}
-              className="w-full py-3 px-4 rounded-xl vs-card border vs-border text-sm vs-text outline-none resize-none"
-              style={{ backgroundColor: 'var(--vs-card)' }}
-            />
-            <div className="flex gap-2 mt-2">
-              <button
-                onClick={handleRandomPrompt}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover"
-              >
+            <textarea value={imgPrompt} onChange={(e) => setImgPrompt(e.target.value)} placeholder="Describe what you want to see..." rows={3} className="w-full py-3 px-4 rounded-xl vs-card border vs-border text-sm vs-text outline-none resize-none" style={{ backgroundColor: 'var(--vs-card)' }} />
+            <div className="flex gap-2 mt-2 flex-wrap">
+              <button onClick={() => setImgPrompt(RANDOM_PROMPTS[Math.floor(Math.random() * RANDOM_PROMPTS.length)])} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover">
                 <Shuffle size={12} /> Random
               </button>
-              <button
-                onClick={handleEnhance}
-                disabled={enhancing || !imgPrompt.trim()}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover"
-              >
-                <Sparkles size={12} /> {enhancing ? 'Enhancing...' : 'Enhance'}
-              </button>
+              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub cursor-pointer">
+                <input type="checkbox" checked={enhance} onChange={(e) => setEnhance(e.target.checked)} className="w-3.5 h-3.5 rounded" />
+                <Sparkles size={12} /> Enhance
+              </label>
             </div>
           </div>
 
-          {/* Generate button */}
-          <button
-            onClick={handleGenerate}
-            disabled={imgLoading || !imgPrompt.trim()}
-            className="vs-btn w-full py-3 rounded-xl text-sm font-bold mb-6 gap-2"
-            style={{ opacity: imgLoading || !imgPrompt.trim() ? 0.5 : 1 }}
-          >
-            {imgLoading ? (
-              <><Loader2 size={16} className="animate-spin" /> Cooking your image...</>
-            ) : (
-              <><Sparkles size={16} /> Generate</>
-            )}
+          <button onClick={handleGenerate} disabled={imgLoading || !imgPrompt.trim()} className="vs-btn w-full py-3 rounded-xl text-sm font-bold mb-6 gap-2" style={{ opacity: imgLoading || !imgPrompt.trim() ? 0.5 : 1 }}>
+            {imgLoading ? (<><Loader2 size={16} className="animate-spin" /> Cooking your image...</>) : (<><Sparkles size={16} /> Generate</>)}
           </button>
 
-          {/* Error */}
           {imgError && (
             <div className="vs-card border vs-border rounded-xl p-4 text-center mb-6">
               <p className="text-xl mb-1">💀</p>
@@ -472,73 +576,211 @@ export default function AIPage() {
             </div>
           )}
 
-          {/* Result */}
           {imgResult && (
             <div className="vs-card border vs-border rounded-2xl overflow-hidden mb-6">
               <img src={imgResult.url} alt={imgResult.prompt} className="w-full" />
               <div className="p-4">
-                <p className="text-xs vs-text-sub mb-3 leading-relaxed">{imgResult.prompt}</p>
-                <p className="text-[10px] vs-text-sub mb-3">Model: {imgResult.model} • Size: {imgResult.size}</p>
+                <p className="text-xs vs-text-sub mb-2 leading-relaxed">{imgResult.prompt}</p>
+                <p className="text-[10px] vs-text-sub mb-3">Model: {imgResult.model} • Size: {imgResult.size} • Seed: {imgResult.seed}</p>
                 <div className="flex gap-2">
-                  <button onClick={handleDownload} className="flex-1 vs-btn py-2.5 rounded-xl text-xs font-semibold gap-1">
-                    <Download size={14} /> Download
-                  </button>
-                  <button onClick={handleSaveAI} className="flex-1 vs-btn-outline py-2.5 rounded-xl text-xs font-semibold gap-1">
-                    <Heart size={14} /> Save
-                  </button>
+                  <button onClick={handleDownload} className="flex-1 vs-btn py-2.5 rounded-xl text-xs font-semibold gap-1"><Download size={14} /> Download</button>
+                  <button onClick={handleSaveAI} className="flex-1 vs-btn-outline py-2.5 rounded-xl text-xs font-semibold gap-1"><Heart size={14} /> Save</button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Recent */}
           {recent.length > 0 && (
             <div className="mb-4">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-semibold vs-text">Recent ({recent.length})</p>
-                <a href="/favorites" className="text-[10px] vs-text-sub hover:underline flex items-center gap-1">
-                  All in Favorites <ExternalLink size={10} />
-                </a>
+                <a href="/favorites?tab=ai" className="text-[10px] vs-text-sub hover:underline flex items-center gap-1">All in Favorites <ExternalLink size={10} /></a>
               </div>
               <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
                 {recent.map((item, i) => (
-                  <button
-                    key={i}
-                    onClick={() => { setImgPrompt(item.prompt); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                    className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border vs-border vs-hover"
-                  >
+                  <button key={i} onClick={() => { setImgPrompt(item.prompt); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border vs-border vs-hover">
                     <img src={item.url} alt={item.prompt} className="w-full h-full object-cover" loading="lazy" />
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] vs-text-sub mt-2">
-                Click a thumbnail to reuse its prompt. All generations saved in <a href="/favorites" className="underline">Favorites</a>.
-              </p>
+              <p className="text-[10px] vs-text-sub mt-2">Click to reuse prompt. All saved in <a href="/favorites?tab=ai" className="underline">Favorites</a>.</p>
             </div>
           )}
         </div>
       )}
 
-      {/* ===== POPUP ===== */}
-      {popup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6" onClick={() => setPopup(null)}>
-          <div className="vs-card rounded-2xl p-6 max-w-sm w-full text-center border vs-border" onClick={(e) => e.stopPropagation()}>
-            <p className="text-4xl mb-3">{popup === 'byop' ? BYOP_POPUP.emoji : KEY_POPUP.emoji}</p>
-            <h3 className="text-lg font-bold vs-text mb-2">{popup === 'byop' ? BYOP_POPUP.title : KEY_POPUP.title}</h3>
-            <p className="text-sm vs-text-sub mb-5 leading-relaxed">{popup === 'byop' ? BYOP_POPUP.desc : KEY_POPUP.desc}</p>
-            <div className="flex gap-2">
-              <button onClick={() => setPopup(null)} className="flex-1 vs-btn-outline px-4 py-2.5 rounded-xl text-sm font-semibold">
-                Close
-              </button>
-              <a
-                href={popup === 'byop' ? BYOP_POPUP.link : KEY_POPUP.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 vs-btn px-4 py-2.5 rounded-xl text-sm font-semibold gap-1"
-              >
-                Get Key <ExternalLink size={14} />
+      {/* ===== VOICE ===== */}
+      {tab === 'voice' && (
+        <div>
+          <div className="flex gap-2 mb-5">
+            <button onClick={() => setVoiceMode('tts')}
+              className="flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5"
+              style={{ backgroundColor: voiceMode === 'tts' ? 'var(--vs-accent)' : 'var(--vs-card)', color: voiceMode === 'tts' ? '#fff' : 'var(--vs-text-sub)', border: `1px solid ${voiceMode === 'tts' ? 'var(--vs-accent)' : 'var(--vs-border)'}` }}
+            ><Mic size={14} /> Text to Speech</button>
+            <button onClick={() => setVoiceMode('music')}
+              className="flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5"
+              style={{ backgroundColor: voiceMode === 'music' ? 'var(--vs-accent)' : 'var(--vs-card)', color: voiceMode === 'music' ? '#fff' : 'var(--vs-text-sub)', border: `1px solid ${voiceMode === 'music' ? 'var(--vs-accent)' : 'var(--vs-border)'}` }}
+            ><Music size={14} /> Music Gen</button>
+          </div>
+
+          {voiceMode === 'tts' && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold vs-text mb-2">Voice</p>
+              <div className="flex flex-wrap gap-1.5">
+                {VOICES.map((v) => (
+                  <button key={v} onClick={() => setVoiceVoice(v)}
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all"
+                    style={{ backgroundColor: voiceVoice === v ? 'var(--vs-accent)' : 'var(--vs-card)', color: voiceVoice === v ? '#fff' : 'var(--vs-text-sub)', border: `1px solid ${voiceVoice === v ? 'var(--vs-accent)' : 'var(--vs-border)'}` }}
+                  >{v}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {voiceMode === 'music' && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold vs-text mb-2">Duration: {voiceDuration}s</p>
+              <input type="range" min="10" max="120" value={voiceDuration} onChange={(e) => setVoiceDuration(parseInt(e.target.value))} className="w-full" />
+            </div>
+          )}
+
+          <div className="mb-4">
+            <p className="text-xs font-semibold vs-text mb-2">{voiceMode === 'tts' ? 'Text to speak' : 'Describe the music'}</p>
+            <textarea value={voiceText} onChange={(e) => setVoiceText(e.target.value)} placeholder={voiceMode === 'tts' ? 'Type what you want to hear...' : 'A chill lo-fi beat with piano and rain sounds...'} rows={3} className="w-full py-3 px-4 rounded-xl vs-card border vs-border text-sm vs-text outline-none resize-none" style={{ backgroundColor: 'var(--vs-card)' }} />
+          </div>
+
+          <button onClick={handleVoiceGenerate} disabled={voiceLoading || !voiceText.trim()} className="vs-btn w-full py-3 rounded-xl text-sm font-bold mb-6 gap-2" style={{ opacity: voiceLoading || !voiceText.trim() ? 0.5 : 1 }}>
+            {voiceLoading ? (<><Loader2 size={16} className="animate-spin" /> Generating audio...</>) : (<><Play size={16} /> Generate</>)}
+          </button>
+
+          {voiceError && (
+            <div className="vs-card border vs-border rounded-xl p-4 text-center mb-4">
+              <p className="text-xl mb-1">💀</p>
+              <p className="text-xs vs-text-sub">{voiceError}</p>
+            </div>
+          )}
+
+          {voiceResult && (
+            <div className="vs-card border vs-border rounded-2xl p-4 mb-4">
+              <p className="text-xs font-semibold vs-text mb-3">{voiceMode === 'tts' ? 'Your Audio' : 'Your Music'}</p>
+              <audio controls src={voiceResult} className="w-full" />
+              <a href={voiceResult} download={`viralscope-${voiceMode}-${Date.now()}.mp3`} className="vs-btn-outline w-full py-2 rounded-xl text-xs font-semibold mt-3 gap-1 flex items-center justify-center">
+                <Download size={14} /> Download
               </a>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ===== VIDEO ===== */}
+      {tab === 'video' && (
+        <div>
+          <div className="vs-card border vs-border rounded-xl p-3 mb-4 text-center">
+            <p className="text-[10px] vs-text-sub">Model: <strong className="vs-text">Grok Video</strong> • Requires your API key</p>
+          </div>
+
+          <div className="mb-4">
+            <p className="text-xs font-semibold vs-text mb-2">Duration: {videoDuration}s</p>
+            <input type="range" min="1" max="10" value={videoDuration} onChange={(e) => setVideoDuration(parseInt(e.target.value))} className="w-full" />
+          </div>
+
+          <div className="mb-4">
+            <p className="text-xs font-semibold vs-text mb-2">Prompt</p>
+            <textarea value={videoPrompt} onChange={(e) => setVideoPrompt(e.target.value)} placeholder="A drone shot flying over a neon cyberpunk city at night..." rows={3} className="w-full py-3 px-4 rounded-xl vs-card border vs-border text-sm vs-text outline-none resize-none" style={{ backgroundColor: 'var(--vs-card)' }} />
+          </div>
+
+          <button onClick={handleVideoGenerate} disabled={videoLoading || !videoPrompt.trim()} className="vs-btn w-full py-3 rounded-xl text-sm font-bold mb-6 gap-2" style={{ opacity: videoLoading || !videoPrompt.trim() ? 0.5 : 1 }}>
+            {videoLoading ? (<><Loader2 size={16} className="animate-spin" /> This might take a while...</>) : (<><Film size={16} /> Generate Video</>)}
+          </button>
+
+          {videoError && (
+            <div className="vs-card border vs-border rounded-xl p-4 text-center mb-4">
+              <p className="text-xl mb-1">💀</p>
+              <p className="text-xs vs-text-sub">{videoError}</p>
+            </div>
+          )}
+
+          {videoResult && (
+            <div className="vs-card border vs-border rounded-2xl overflow-hidden mb-4">
+              <video controls src={videoResult} className="w-full" />
+              <div className="p-3">
+                <a href={videoResult} download={`viralscope-video-${Date.now()}.mp4`} className="vs-btn w-full py-2 rounded-xl text-xs font-semibold gap-1 flex items-center justify-center">
+                  <Download size={14} /> Download
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===== KEY POPUP ===== */}
+      {showKeyPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6" onClick={() => { setShowKeyPopup(false); setPendingAction(null) }}>
+          <div className="vs-card rounded-2xl p-6 max-w-sm w-full border vs-border" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-4">
+              <p className="text-4xl mb-2">{keyReason === 'quota' ? '😭' : '🔑'}</p>
+              <h3 className="text-lg font-bold vs-text mb-1">
+                {keyReason === 'quota' ? 'Free vibes ran out bestie' :
+                 keyReason === 'flux2_limit' ? 'FLUX.2 Dev limit hit' :
+                 'Drop your key bestie'}
+              </h3>
+              <p className="text-xs vs-text-sub leading-relaxed">
+                {keyReason === 'quota'
+                  ? "Your daily free pollen is depleted. Add your own key to keep creating, or come back tomorrow for a fresh batch."
+                  : keyReason === 'flux2_limit'
+                  ? "You've used your 2 free FLUX.2 Dev generations today. Add your key for unlimited access, or try Flux/Z-Image instead."
+                  : "This feature needs your own API key. It takes like 30 seconds to get one — worth it, trust."
+                }
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <input
+                type="text"
+                value={keyInput}
+                onChange={(e) => setKeyInput(e.target.value)}
+                placeholder="Paste your API key here..."
+                className="w-full py-3 px-4 rounded-xl vs-card border vs-border text-sm vs-text outline-none"
+                style={{ backgroundColor: 'var(--vs-bg)' }}
+              />
+            </div>
+
+            <button
+              onClick={handleKeySave}
+              disabled={!keyInput.trim()}
+              className="vs-btn w-full py-2.5 rounded-xl text-sm font-semibold mb-3"
+              style={{ opacity: keyInput.trim() ? 1 : 0.5 }}
+            >
+              Save Key
+            </button>
+
+            <div className="text-center">
+              <p className="text-[10px] vs-text-sub mb-2">Don&apos;t have a key yet?</p>
+              <a
+                href="https://enter.pollinations.ai/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="vs-btn-outline px-4 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-1"
+              >
+                Get one at Pollinations <ExternalLink size={12} />
+              </a>
+            </div>
+
+            <button onClick={() => { setShowKeyPopup(false); setPendingAction(null) }} className="w-full text-center text-[10px] vs-text-sub hover:underline mt-4">
+              Maybe later
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ===== ERROR POPUP ===== */}
+      {errorPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6" onClick={() => setErrorPopup(null)}>
+          <div className="vs-card rounded-2xl p-6 max-w-sm w-full text-center border vs-border" onClick={(e) => e.stopPropagation()}>
+            <p className="text-4xl mb-3">{errorPopup.emoji}</p>
+            <h3 className="text-lg font-bold vs-text mb-2">{errorPopup.title}</h3>
+            <p className="text-sm vs-text-sub mb-5 leading-relaxed">{errorPopup.desc}</p>
+            <button onClick={() => setErrorPopup(null)} className="vs-btn px-6 py-2.5 rounded-xl text-sm font-semibold">Got it</button>
           </div>
         </div>
       )}
