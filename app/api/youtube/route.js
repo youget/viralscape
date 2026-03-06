@@ -73,7 +73,6 @@ async function searchVideos(query) {
 
   return details
     .filter(v => parseDuration(v.contentDetails.duration) <= 120)
-    .slice(0, 30)
     .map(formatVideo)
 }
 
@@ -85,7 +84,6 @@ async function getTrending() {
 
   return data.items
     .filter(v => parseDuration(v.contentDetails.duration) <= 120)
-    .slice(0, 30)
     .map(formatVideo)
 }
 
