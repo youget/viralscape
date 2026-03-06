@@ -5,17 +5,33 @@ import { Send, Image, MessageSquare, Mic, Film, Sparkles, Shuffle, Download, Hea
 const FAV_AI_KEY = 'vs-fav-ai'
 const RECENT_KEY = 'vs-recent-ai'
 
-const FREE_MODELS = [
-  { id: 'flux', label: 'Flux Schnell', free: true },
-  { id: 'zimage', label: 'Z-Image Turbo', free: true },
+const CHAT_MODELS = [
+  { id: 'qwen-safety', label: 'Qwen3Guard 8B', desc: '250K resp', free: true },
+  { id: 'qwen-character', label: 'Qwen Character', desc: '1M resp', free: true },
+  { id: 'nova-fast', label: 'Amazon Nova Micro', desc: '12.2K resp', free: true },
+  { id: 'gemini-fast', label: 'Gemini 2.5 Flash', desc: '4.4K resp', free: true, tags: 'vision search code' },
+  { id: 'gemini-search', label: 'Gemini Search', desc: '2.8K resp', free: true, tags: 'search' },
+  { id: 'qwen-coder', label: 'Qwen3 Coder 30B', desc: '2.2K resp', free: true },
+  { id: 'mistral', label: 'Mistral Small 3.2', desc: '1.7K resp', free: true },
+  { id: 'perplexity-fast', label: 'Perplexity Sonar', desc: '850 resp', free: true, tags: 'search' },
+  { id: 'openai-fast', label: 'GPT-5 Nano', desc: '1.1K resp', free: false },
+  { id: 'openai', label: 'GPT-5 Mini', desc: '950 resp', free: false },
+  { id: 'minimax', label: 'MiniMax M2.5', desc: '500 resp', free: false },
+  { id: 'deepseek', label: 'DeepSeek V3.2', desc: '250 resp', free: false },
 ]
 
-const BYOP_MODELS = [
-  { id: 'imagen-4', label: 'Imagen 4' },
-  { id: 'grok-imagine', label: 'Grok Imagine' },
-  { id: 'klein', label: 'FLUX.2 Klein 4B' },
-  { id: 'klein-large', label: 'FLUX.2 Klein 9B' },
-  { id: 'gptimage', label: 'GPT Image 1 Mini' },
+const FREE_IMG_MODELS = [
+  { id: 'flux', label: 'Flux Schnell', desc: '4.8K imgs', free: true },
+  { id: 'zimage', label: 'Z-Image Turbo', desc: '4.3K imgs', free: true },
+  { id: 'imagen-4', label: 'Imagen 4', desc: '400 imgs', free: true, alpha: true },
+  { id: 'grok-imagine', label: 'Grok Imagine', desc: '400 imgs', free: true, alpha: true },
+]
+
+const BYOP_IMG_MODELS = [
+  { id: 'flux-2-dev', label: 'FLUX.2 Dev', desc: '1K imgs' },
+  { id: 'klein', label: 'FLUX.2 Klein 4B', desc: '100 imgs' },
+  { id: 'klein-large', label: 'FLUX.2 Klein 9B', desc: '85 imgs' },
+  { id: 'gptimage', label: 'GPT Image 1 Mini', desc: '75 imgs' },
 ]
 
 const SIZES = [
@@ -81,15 +97,15 @@ export default function AIPage() {
   const [tab, setTab] = useState('chat')
   const [popup, setPopup] = useState(null)
 
-  // chat state
+  const [chatModel, setChatModel] = useState('qwen-safety')
+  const [showModelPicker, setShowModelPicker] = useState(false)
   const [chatMessages, setChatMessages] = useState([
-    { role: 'assistant', content: "Yo what's good! I'm your AI buddy. Ask me anything — I promise I'm only slightly unhinged." }
+    { role: 'assistant', content: "Yo what's good! I'm your AI buddy. Pick a model above and ask me anything — I promise I'm only slightly unhinged." }
   ])
   const [chatInput, setChatInput] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
   const chatEndRef = useRef(null)
 
-  // image state
   const [imgPrompt, setImgPrompt] = useState('')
   const [imgModel, setImgModel] = useState('flux')
   const [imgSize, setImgSize] = useState(0)
@@ -113,10 +129,17 @@ export default function AIPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatMessages])
 
-  // ===== CHAT =====
+  const currentChatModel = CHAT_MODELS.find(m => m.id === chatModel) || CHAT_MODELS[0]
+
   async function handleChat(e) {
     e.preventDefault()
     if (!chatInput.trim() || chatLoading) return
+
+    if (!currentChatModel.free) {
+      setPopup('byop')
+      return
+    }
+
     const userMsg = { role: 'user', content: chatInput.trim() }
     const newMessages = [...chatMessages, userMsg]
     setChatMessages(newMessages)
@@ -126,7 +149,7 @@ export default function AIPage() {
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'chat', messages: newMessages }),
+        body: JSON.stringify({ action: 'chat', messages: newMessages, model: chatModel }),
       })
       const data = await res.json()
       setChatMessages([...newMessages, { role: 'assistant', content: data.result || 'Bruh I got nothing. Try again?' }])
@@ -136,7 +159,12 @@ export default function AIPage() {
     setChatLoading(false)
   }
 
-  // ===== IMAGE =====
+  function handleClearChat() {
+    setChatMessages([
+      { role: 'assistant', content: "Fresh start! What's on your mind?" }
+    ])
+  }
+
   function handleRandomPrompt() {
     const r = RANDOM_PROMPTS[Math.floor(Math.random() * RANDOM_PROMPTS.length)]
     setImgPrompt(r)
@@ -218,10 +246,9 @@ export default function AIPage() {
       </p>
       <p className="text-[10px] text-center mb-5 px-3 py-1.5 rounded-full vs-card border vs-border inline-flex mx-auto items-center gap-1" style={{ display: 'flex', width: 'fit-content', margin: '0 auto 20px auto' }}>
         <Sparkles size={10} style={{ color: 'var(--vs-accent)' }} />
-        <span className="vs-text-sub">Free: Flux & Z-Image (5K imgs/day) — BYOP for premium models</span>
+        <span className="vs-text-sub">1 pollen/day free — BYOP for premium</span>
       </p>
 
-      {/* Tabs */}
       <div className="flex gap-1 mb-6 vs-card border vs-border rounded-xl p-1">
         {tabs.map((t) => {
           const Icon = t.icon
@@ -249,6 +276,52 @@ export default function AIPage() {
       {/* ===== CHAT TAB ===== */}
       {tab === 'chat' && (
         <div className="flex flex-col" style={{ height: 'calc(100vh - 320px)' }}>
+          {/* Model picker */}
+          <div className="mb-3">
+            <button
+              onClick={() => setShowModelPicker(!showModelPicker)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl vs-card border vs-border text-xs font-semibold vs-text w-full"
+            >
+              <MessageSquare size={12} style={{ color: 'var(--vs-accent)' }} />
+              <span className="flex-1 text-left">{currentChatModel.label}</span>
+              <span className="vs-text-sub">{currentChatModel.desc}</span>
+              <ChevronDown size={14} className="vs-text-sub" style={{ transform: showModelPicker ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+            </button>
+
+            {showModelPicker && (
+              <div className="vs-card border vs-border rounded-xl mt-1 max-h-60 overflow-y-auto">
+                {CHAT_MODELS.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => {
+                      if (!m.free) { setPopup('byop'); setShowModelPicker(false); return }
+                      setChatModel(m.id)
+                      setShowModelPicker(false)
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs vs-hover transition-colors border-b vs-border last:border-b-0"
+                    style={{ color: chatModel === m.id ? 'var(--vs-accent)' : 'var(--vs-text)' }}
+                  >
+                    <span className="flex-1 text-left font-semibold">{m.label}</span>
+                    <span className="vs-text-sub">{m.desc}</span>
+                    {m.tags && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full vs-bg2 vs-text-sub">{m.tags}</span>
+                    )}
+                    {!m.free && <span>🔑</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Clear chat */}
+          <button
+            onClick={handleClearChat}
+            className="text-[10px] vs-text-sub hover:underline mb-2 self-end"
+          >
+            Clear chat
+          </button>
+
+          {/* Messages */}
           <div className="flex-1 overflow-y-auto flex flex-col gap-3 mb-4 pr-1">
             {chatMessages.map((msg, i) => (
               <div
@@ -270,6 +343,8 @@ export default function AIPage() {
             )}
             <div ref={chatEndRef} />
           </div>
+
+          {/* Input */}
           <form onSubmit={handleChat} className="flex gap-2">
             <input
               type="text"
@@ -297,7 +372,7 @@ export default function AIPage() {
           <div className="mb-4">
             <p className="text-xs font-semibold vs-text mb-2">Model</p>
             <div className="flex flex-wrap gap-2">
-              {FREE_MODELS.map((m) => (
+              {FREE_IMG_MODELS.map((m) => (
                 <button
                   key={m.id}
                   onClick={() => setImgModel(m.id)}
@@ -308,10 +383,10 @@ export default function AIPage() {
                     border: `1px solid ${imgModel === m.id ? 'var(--vs-accent)' : 'var(--vs-border)'}`,
                   }}
                 >
-                  {m.label} ✨
+                  {m.label} {m.alpha ? '⚠️' : '✨'}
                 </button>
               ))}
-              {BYOP_MODELS.map((m) => (
+              {BYOP_IMG_MODELS.map((m) => (
                 <button
                   key={m.id}
                   onClick={handleBYOPModel}
@@ -321,6 +396,9 @@ export default function AIPage() {
                 </button>
               ))}
             </div>
+            <p className="text-[10px] vs-text-sub mt-1.5">
+              ✨ Free • ⚠️ Alpha (experimental) • 🔑 BYOP (needs key)
+            </p>
           </div>
 
           {/* Size selection */}
@@ -397,11 +475,7 @@ export default function AIPage() {
           {/* Result */}
           {imgResult && (
             <div className="vs-card border vs-border rounded-2xl overflow-hidden mb-6">
-              <img
-                src={imgResult.url}
-                alt={imgResult.prompt}
-                className="w-full"
-              />
+              <img src={imgResult.url} alt={imgResult.prompt} className="w-full" />
               <div className="p-4">
                 <p className="text-xs vs-text-sub mb-3 leading-relaxed">{imgResult.prompt}</p>
                 <p className="text-[10px] vs-text-sub mb-3">Model: {imgResult.model} • Size: {imgResult.size}</p>
