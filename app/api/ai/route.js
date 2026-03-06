@@ -1,6 +1,6 @@
 export async function POST(request) {
   const body = await request.json()
-  const { action, messages, prompt } = body
+  const { action, messages, prompt, model } = body
 
   try {
     if (action === 'chat') {
@@ -9,7 +9,7 @@ export async function POST(request) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: messages || [{ role: 'user', content: prompt }],
-          model: 'qwen-safety',
+          model: model || 'qwen-safety',
         }),
       })
       const text = await res.text()
