@@ -1,0 +1,18 @@
+{
+  "name": "ViralScope",
+  "short_name": "ViralScope",
+  "description": "Your brain called. It wants dopamine. Viral videos + AI tools.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B1121",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
