@@ -62,7 +62,7 @@ function formatVideo(v) {
 async function searchVideos(query) {
   const q = encodeURIComponent(query)
   const data = await fetchWithKeyRotation(
-    `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&videoDuration=short&maxResults=50&order=viewCount&relevanceLanguage=en`
+    `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&videoDuration=short&maxResults=50&order=viewCount`
   )
   if (!data.items || data.items.length === 0) return []
 
@@ -76,28 +76,28 @@ async function searchVideos(query) {
     .map(formatVideo)
 }
 
-async function getTrending() {
+async function getTrending(region) {
+  const rc = region || 'US'
   const data = await fetchWithKeyRotation(
-    `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&maxResults=50&regionCode=US`
+    `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&chart=mostPopular&maxResults=50&regionCode=${rc}`
   )
   if (!data.items) return []
 
-  return data.items
-    .filter(v => parseDuration(v.contentDetails.duration) <= 120)
-    .map(formatVideo)
+  return data.items.map(formatVideo)
 }
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type') || 'trending'
   const query = searchParams.get('q') || ''
+  const region = searchParams.get('region') || 'US'
 
   try {
     let videos
     if (type === 'search' && query) {
       videos = await searchVideos(query)
     } else {
-      videos = await getTrending()
+      videos = await getTrending(region)
     }
     return Response.json({ videos, timestamp: Date.now() })
   } catch (error) {
