@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
-import { Sun, Moon, Menu, X, ExternalLink } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Sun, Moon, Menu, X, ExternalLink, Download } from 'lucide-react'
 import { useTheme } from './ThemeProvider'
 
 const sideMenuItems = [
@@ -12,15 +12,63 @@ const sideMenuItems = [
 
 export default function TopBar() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [installPrompt, setInstallPrompt] = useState(null)
+  const [showInstallBanner, setShowInstallBanner] = useState(false)
   const { theme, toggleTheme } = useTheme()
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault()
+      setInstallPrompt(e)
+      const dismissed = localStorage.getItem('vs-install-dismissed')
+      if (!dismissed) setShowInstallBanner(true)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  async function handleInstall() {
+    if (!installPrompt) return
+    installPrompt.prompt()
+    const result = await installPrompt.userChoice
+    if (result.outcome === 'accepted') {
+      setShowInstallBanner(false)
+      setInstallPrompt(null)
+    }
+  }
+
+  function dismissBanner() {
+    setShowInstallBanner(false)
+    localStorage.setItem('vs-install-dismissed', 'true')
+  }
 
   return (
     <>
+      {/* Install Banner */}
+      {showInstallBanner && (
+        <div className="fixed top-14 left-0 right-0 z-50 px-4 py-2">
+          <div className="vs-card border vs-border rounded-xl p-3 flex items-center gap-3 max-w-5xl mx-auto shadow-lg">
+            <span className="text-xl">📲</span>
+            <div className="flex-1">
+              <p className="text-xs font-bold vs-text">Add ViralScope to home screen</p>
+              <p className="text-[10px] vs-text-sub">Quick access, app-like experience</p>
+            </div>
+            <button onClick={handleInstall} className="vs-btn px-3 py-1.5 rounded-lg text-[10px] font-bold">
+              Install
+            </button>
+            <button onClick={dismissBanner} className="vs-text-sub p-1">
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Top Bar */}
       <header className="fixed top-0 left-0 right-0 z-50 vs-glass border-b vs-border">
         <div className="flex items-center justify-between px-4 h-14 max-w-5xl mx-auto">
-          <span className="text-xl font-extrabold tracking-tight vs-gradient-text">
+          <a href="/" className="text-xl font-extrabold tracking-tight vs-gradient-text">
             ViralScope
-          </span>
+          </a>
           <div className="flex items-center gap-1">
             <button
               onClick={toggleTheme}
@@ -40,6 +88,7 @@ export default function TopBar() {
         </div>
       </header>
 
+      {/* Side Menu */}
       {menuOpen && (
         <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)}>
           <div className="absolute inset-0 bg-black/40" />
@@ -64,10 +113,60 @@ export default function TopBar() {
                   {item.external && <ExternalLink size={14} className="vs-text-sub" />}
                 </a>
               ))}
+
+              {/* Install App */}
+              {installPrompt && (
+                <button
+                  onClick={() => { handleInstall(); setMenuOpen(false) }}
+                  className="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium vs-text vs-hover transition-colors"
+                >
+                  Install App
+                  <Download size={14} className="vs-text-sub" />
+                </button>
+              )}
             </nav>
+
+            {/* Key Status */}
+            <div className="mt-6 px-4">
+              <p className="text-xs font-semibold vs-text-sub uppercase tracking-wider mb-2">API Key</p>
+              <KeyStatus />
+            </div>
           </aside>
         </div>
       )}
     </>
+  )
+}
+
+function KeyStatus() {
+  const [hasKey, setHasKey] = useState(false)
+
+  useEffect(() => {
+    setHasKey(!!localStorage.getItem('vs-user-polli-key'))
+  }, [])
+
+  if (hasKey) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-green-500" />
+        <span className="text-xs vs-text-sub">Key active</span>
+        <button
+          onClick={() => {
+            localStorage.removeItem('vs-user-polli-key')
+            setHasKey(false)
+          }}
+          className="text-[10px] vs-text-sub hover:underline ml-auto"
+        >
+          remove
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <a href="/ai" className="flex items-center gap-2">
+      <span className="w-2 h-2 rounded-full bg-gray-400" />
+      <span className="text-xs vs-text-sub">No key — using free tier</span>
+    </a>
   )
 }
