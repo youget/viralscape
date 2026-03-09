@@ -50,7 +50,7 @@ export default function TopBar() {
           <div className="vs-card border vs-border rounded-xl p-3 flex items-center gap-3 max-w-5xl mx-auto shadow-lg">
             <span className="text-xl">📲</span>
             <div className="flex-1">
-              <p className="text-xs font-bold vs-text">Add ViralScope to home screen</p>
+              <p className="text-xs font-bold vs-text">Add ViralScape to home screen</p>
               <p className="text-[10px] vs-text-sub">Quick access, app-like experience</p>
             </div>
             <button onClick={handleInstall} className="vs-btn px-3 py-1.5 rounded-lg text-[10px] font-bold">
@@ -67,7 +67,7 @@ export default function TopBar() {
       <header className="fixed top-0 left-0 right-0 z-50 vs-glass border-b vs-border">
         <div className="flex items-center justify-between px-4 h-14 max-w-5xl mx-auto">
           <a href="/" className="text-xl font-extrabold tracking-tight vs-gradient-text">
-            ViralScope
+            ViralScape
           </a>
           <div className="flex items-center gap-1">
             <button
