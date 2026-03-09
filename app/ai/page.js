@@ -17,8 +17,8 @@ const CHAT_MODELS = [
 ]
 
 const ALL_IMG_MODELS = [
-  { id: 'zimage', label: 'Z-Image Turbo', desc: '', type: 'free' },
   { id: 'flux', label: 'Flux Schnell', desc: '', type: 'free' },
+  { id: 'zimage', label: 'Z-Image Turbo', desc: '', type: 'free' },
   { id: 'flux-2-dev', label: 'FLUX.2 Dev', desc: '2/day free', type: 'limited' },
   { id: 'imagen-4', label: 'Imagen 4', desc: '', type: 'byop' },
   { id: 'grok-imagine', label: 'Grok Imagine', desc: '', type: 'byop' },
