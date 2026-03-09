@@ -16,7 +16,7 @@ export const viewport = {
 }
 
 export const metadata = {
-  title: 'ViralScope',
+  title: 'ViralScape',
   description: 'Your brain called. It wants dopamine. Viral videos + AI tools. Completely free. No cap.',
   manifest: '/manifest.json',
   icons: {
@@ -24,21 +24,21 @@ export const metadata = {
     apple: '/favicon.svg',
   },
   openGraph: {
-    title: 'ViralScope',
+    title: 'ViralScape',
     description: 'Your brain called. It wants dopamine. The shortest, most unhinged videos and AI tools on the internet.',
-    siteName: 'ViralScope',
+    siteName: 'ViralScape',
     type: 'website',
     url: 'https://viralscape.vercel.app',
   },
   twitter: {
     card: 'summary',
-    title: 'ViralScope',
+    title: 'ViralScape',
     description: 'Viral videos + AI tools. Completely free. No cap.',
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'ViralScope',
+    title: 'ViralScape',
   },
 }
 
