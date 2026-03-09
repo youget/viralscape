@@ -19,7 +19,7 @@ const features = [
 ]
 
 const steps = [
-  { num: '01', text: 'Open ViralScope' },
+  { num: '01', text: 'Open ViralScape' },
   { num: '02', text: 'Lose 3 hours of your life' },
   { num: '03', text: 'Question your life choices' },
 ]
