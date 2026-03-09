@@ -17,14 +17,14 @@ const CHAT_MODELS = [
 ]
 
 const ALL_IMG_MODELS = [
-  { id: 'zimage', label: 'Z-Image Turbo', desc: '4.3K imgs', type: 'free' },
-  { id: 'flux', label: 'Flux Schnell', desc: '4.8K imgs', type: 'free' },
+  { id: 'zimage', label: 'Z-Image Turbo', desc: '', type: 'free' },
+  { id: 'flux', label: 'Flux Schnell', desc: '', type: 'free' },
   { id: 'flux-2-dev', label: 'FLUX.2 Dev', desc: '2/day free', type: 'limited' },
-  { id: 'imagen-4', label: 'Imagen 4', desc: '400 imgs', type: 'byop' },
-  { id: 'grok-imagine', label: 'Grok Imagine', desc: '400 imgs', type: 'byop' },
-  { id: 'klein', label: 'Klein 4B', desc: '100 imgs', type: 'byop' },
-  { id: 'klein-large', label: 'Klein 9B', desc: '85 imgs', type: 'byop' },
-  { id: 'gptimage', label: 'GPT Image', desc: '75 imgs', type: 'byop' },
+  { id: 'imagen-4', label: 'Imagen 4', desc: '', type: 'byop' },
+  { id: 'grok-imagine', label: 'Grok Imagine', desc: '', type: 'byop' },
+  { id: 'klein', label: 'Klein 4B', desc: '', type: 'byop' },
+  { id: 'klein-large', label: 'Klein 9B', desc: '', type: 'byop' },
+  { id: 'gptimage', label: 'GPT Image', desc: '', type: 'byop' },
 ]
 
 const SIZES = [
