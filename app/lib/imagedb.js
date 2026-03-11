@@ -1,7 +1,6 @@
 const DB_NAME = 'viralscape-ai'
 const STORE_NAME = 'images'
 const DB_VERSION = 1
-const MAX_ITEMS = 30
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -18,25 +17,47 @@ function openDB() {
   })
 }
 
-export async function compressImage(blobUrl, maxSize) {
-  const ms = maxSize || 100
+export async function compressImage(blobUrl, maxSize = 100) {
   return new Promise((resolve) => {
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => {
       const canvas = document.createElement('canvas')
-      canvas.width = ms
-      canvas.height = ms
+      canvas.width = maxSize
+      canvas.height = maxSize
       const ctx = canvas.getContext('2d')
-      const scale = Math.min(ms / img.width, ms / img.height)
+      const scale = Math.min(maxSize / img.width, maxSize / img.height)
       const w = img.width * scale
       const h = img.height * scale
-      const x = (ms - w) / 2
-      const y = (ms - h) / 2
+      const x = (maxSize - w) / 2
+      const y = (maxSize - h) / 2
       ctx.fillStyle = '#000'
-      ctx.fillRect(0, 0, ms, ms)
+      ctx.fillRect(0, 0, maxSize, maxSize)
       ctx.drawImage(img, x, y, w, h)
       resolve(canvas.toDataURL('image/jpeg', 0.5))
+    }
+    img.onerror = () => resolve(null)
+    img.src = blobUrl
+  })
+}
+
+export async function compressImageToSize(blobUrl, targetSize = 512) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      let w = img.width
+      let h = img.height
+      const scale = targetSize / Math.max(w, h)
+      if (scale < 1) {
+        w = Math.round(w * scale)
+        h = Math.round(h * scale)
+      }
+      canvas.width = w
+      canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      resolve(canvas.toDataURL('image/jpeg', 0.8))
     }
     img.onerror = () => resolve(null)
     img.src = blobUrl
@@ -53,27 +74,12 @@ export async function saveImage(item) {
       model: item.model,
       size: item.size,
       seed: item.seed,
+      style: item.style || 'none',
       thumbnail: item.thumbnail || null,
+      medium: item.medium || null,
       timestamp: Date.now(),
     }
     store.add(data)
-
-    const countReq = store.count()
-    countReq.onsuccess = () => {
-      if (countReq.result > MAX_ITEMS) {
-        const idx = store.index('timestamp')
-        const cursor = idx.openCursor()
-        let deleteCount = countReq.result - MAX_ITEMS
-        cursor.onsuccess = (e) => {
-          const c = e.target.result
-          if (c && deleteCount > 0) {
-            c.delete()
-            deleteCount--
-            c.continue()
-          }
-        }
-      }
-    }
 
     await new Promise((resolve, reject) => {
       tx.oncomplete = resolve
@@ -85,7 +91,7 @@ export async function saveImage(item) {
   }
 }
 
-export async function getRecentImages(limit) {
+export async function getRecentImages(limit = 10) {
   try {
     const db = await openDB()
     const tx = db.transaction(STORE_NAME, 'readonly')
@@ -94,10 +100,10 @@ export async function getRecentImages(limit) {
 
     return new Promise((resolve) => {
       const items = []
-      const req = idx.openCursor(null, 'prev')
+      const req = idx.openCursor(null, 'prev') // descending
       req.onsuccess = (e) => {
         const cursor = e.target.result
-        if (cursor && items.length < (limit || 10)) {
+        if (cursor && items.length < limit) {
           items.push(cursor.value)
           cursor.continue()
         } else {
@@ -105,10 +111,34 @@ export async function getRecentImages(limit) {
           resolve(items)
         }
       }
-      req.onerror = () => { db.close(); resolve([]) }
+      req.onerror = () => {
+        db.close()
+        resolve([])
+      }
     })
   } catch {
     return []
+  }
+}
+
+export async function getImageCount() {
+  try {
+    const db = await openDB()
+    const tx = db.transaction(STORE_NAME, 'readonly')
+    const store = tx.objectStore(STORE_NAME)
+    return new Promise((resolve) => {
+      const countReq = store.count()
+      countReq.onsuccess = () => {
+        db.close()
+        resolve(countReq.result)
+      }
+      countReq.onerror = () => {
+        db.close()
+        resolve(0)
+      }
+    })
+  } catch {
+    return 0
   }
 }
 
@@ -117,7 +147,21 @@ export async function clearAllImages() {
     const db = await openDB()
     const tx = db.transaction(STORE_NAME, 'readwrite')
     tx.objectStore(STORE_NAME).clear()
-    await new Promise((resolve) => { tx.oncomplete = resolve })
+    await new Promise((resolve) => {
+      tx.oncomplete = resolve
+    })
+    db.close()
+  } catch {}
+}
+
+export async function deleteImage(id) {
+  try {
+    const db = await openDB()
+    const tx = db.transaction(STORE_NAME, 'readwrite')
+    tx.objectStore(STORE_NAME).delete(id)
+    await new Promise((resolve) => {
+      tx.oncomplete = resolve
+    })
     db.close()
   } catch {}
 }
