@@ -41,7 +41,7 @@ const navItems = [
   { icon: Play, label: 'Videos', menu: 'videos' },
   { icon: Bot, label: 'AI', menu: 'ai' },
   { icon: Star, label: 'Favs', menu: 'favorites' },
-  { icon: Gamepad2, label: 'Game', href: '/game' }
+  { icon: Gamepad2, label: 'Game', href: '/game' },
   { icon: ExternalLink, label: 'Pollin', href: 'https://enter.pollinations.ai', external: true },
 ]
 
