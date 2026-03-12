@@ -654,34 +654,67 @@ export default function AIPage() {
             <p className="text-xs font-semibold vs-text mb-2">Prompt</p>
             <textarea value={imgPrompt} onChange={(e) => setImgPrompt(e.target.value)} placeholder="Describe what you want to see..." rows={3}
               className="w-full py-3 px-4 rounded-xl vs-card border vs-border text-sm vs-text outline-none resize-none" style={{ backgroundColor: 'var(--vs-card)' }} />
-            <div className="flex gap-2 mt-2 flex-wrap">
-              <button onClick={() => setImgPrompt(RANDOM_PROMPTS[Math.floor(Math.random() * RANDOM_PROMPTS.length)])}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover"><Shuffle size={12} /> Random</button>
-              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub cursor-pointer">
-                <input type="checkbox" checked={enhanceOn} onChange={(e) => setEnhanceOn(e.target.checked)} className="w-3.5 h-3.5 rounded" />
-                <Sparkles size={12} /> Enhance
-              </label>
+            <div className="md:w-1/2 mx-auto">
+  <div className="grid grid-cols-3 gap-2 mt-2">
+    {/* Tombol Random */}
+    <button
+      onClick={() => setImgPrompt(RANDOM_PROMPTS[Math.floor(Math.random() * RANDOM_PROMPTS.length)])}
+      className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover"
+    >
+      <Shuffle size={12} /> Random
+    </button>
 
-              {/* Style Picker */}
-              <div className="relative">
-                <button onClick={() => setShowStylePicker(!showStylePicker)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover">
-                  🎨 {currentStyle.label}
-                  <ChevronDown size={12} style={{ transform: showStylePicker ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
-                </button>
-                {showStylePicker && (
-                  <div className="absolute bottom-full mb-1 left-0 vs-card border vs-border rounded-xl shadow-lg max-h-48 overflow-y-auto w-48 z-10">
-                    {STYLES.map((s) => (
-                      <button key={s.id} onClick={() => { setImgStyle(s.id); setShowStylePicker(false) }}
-                        className="w-full text-left px-3 py-2 text-xs vs-hover border-b vs-border last:border-b-0"
-                        style={{ color: imgStyle === s.id ? 'var(--vs-accent)' : 'var(--vs-text)', fontWeight: imgStyle === s.id ? 700 : 500 }}>
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+    {/* Label Enhance (checkbox) */}
+    <label className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub cursor-pointer">
+      <input
+        type="checkbox"
+        checked={enhanceOn}
+        onChange={(e) => setEnhanceOn(e.target.checked)}
+        className="w-3.5 h-3.5 rounded"
+      />
+      <Sparkles size={12} /> Enhance
+    </label>
+
+    {/* Style Picker dengan dropdown */}
+    <div className="relative">
+      <button
+        onClick={() => setShowStylePicker(!showStylePicker)}
+        className="w-full flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover"
+      >
+        🎨 {currentStyle.label}
+        <ChevronDown
+          size={12}
+          style={{
+            transform: showStylePicker ? 'rotate(180deg)' : 'none',
+            transition: '0.2s'
+          }}
+        />
+      </button>
+
+      {/* Dropdown style */}
+      {showStylePicker && (
+        <div className="absolute bottom-full mb-1 left-0 right-0 vs-card border vs-border rounded-xl shadow-lg max-h-48 overflow-y-auto z-10">
+          {STYLES.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => {
+                setImgStyle(s.id);
+                setShowStylePicker(false);
+              }}
+              className="w-full text-left px-3 py-2 text-xs vs-hover border-b vs-border last:border-b-0"
+              style={{
+                color: imgStyle === s.id ? 'var(--vs-accent)' : 'var(--vs-text)',
+                fontWeight: imgStyle === s.id ? 700 : 500
+              }}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+</div>
           </div>
 
           {/* Generate */}
