@@ -5,7 +5,7 @@ export async function POST(request) {
   const { action, messages, prompt, model, width, height, seed, enhance, userKey, voice, duration } = body
 
   const hasUserKey = !!userKey
-  const key = userKey || process.env.POLLI_PK
+  const key = userKey || process.env.NEXT_PUBLIC_POLLI_PK
   
   if (!key) {
     return Response.json({ error: 'no_key', message: 'No API key found.' }, { status: 500 })
