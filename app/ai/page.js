@@ -726,7 +726,7 @@ export default function AIPage() {
             <div className="mb-4">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-semibold vs-text">Recent ({recent.length})</p>
-                <a href="/favorites?tab=ai" className="text-[10px] vs-text-sub hover:underline flex items-center gap-1">All in Favorites <ExternalLink size={10} /></a>
+                <a href="/favorites?tab=ai" className="text-[10px] vs-text-sub hover:underline flex items-center gap-1">The VIP stash <ExternalLink size={10} /></a>
               </div>
               <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
                 {recent.map((item, i) => (
