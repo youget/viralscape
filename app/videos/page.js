@@ -142,19 +142,17 @@ export default function VideosPage() {
   const [searched, setSearched] = useState(false)
   const [currentType, setCurrentType] = useState('trending')
   const [currentQuery, setCurrentQuery] = useState('')
-  const [region, setRegion] = useState('US')
+  const [region, setRegion] = useState(null)
   const nicheRef = useRef(null)
 
   useEffect(() => {
-    setFavs(getFavs())
-    initLoad()
-  }, [])
-
-  async function initLoad() {
-    const r = await getRegion()
-    setRegion(r)
-    loadVideos('trending', '', false, r)
-  }
+  setFavs(getFavs());
+  (async () => {
+    const r = await getRegion();
+    setRegion(r);
+    loadVideos('trending', '', false, r);
+  })();
+}, []);
 
   async function loadVideos(type, q, forceRefresh, reg) {
     const r = reg || region
@@ -370,9 +368,11 @@ export default function VideosPage() {
       </form>
 
       {/* Region */}
-      <p className="text-[10px] vs-text-sub text-center mb-3">
-        Region: {region} {activeNiche === 0 ? '• Showing local trends' : ''}
-      </p>
+      {activeNiche === 0 && (
+  <p className="text-[10px] vs-text-sub text-center mb-3">
+    what's popping here
+  </p>
+)}
 
       {/* Niches */}
       <div ref={nicheRef}
