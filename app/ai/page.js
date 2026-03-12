@@ -392,15 +392,6 @@ export default function AIPage() {
         style: imgStyle
       })
 
-      const count = await getImageCount()
-      if (count >= 50) {
-        setErrorPopup({
-          emoji: '⚠️',
-          title: 'Favorites almost full',
-          desc: `You have ${count} images saved. Consider deleting some old ones from Favorites to make room.`
-        })
-      }
-
       await loadRecent() 
       toast('Image generated!', null) 
 
@@ -420,42 +411,51 @@ export default function AIPage() {
   }
 
   function saveToFavorites() {
-    if (!imgResult) return
+  if (!imgResult) return;
 
-    const { prompt, model, size, seed, style, medium, url } = imgResult
-    const imageUrl = medium || url 
+  const { prompt, model, size, seed, style, medium, url } = imgResult;
+  const imageUrl = medium || url; 
 
-    if (!imageUrl) {
-      toast('No image to save')
-      return
-    }
-
-    let favorites = []
-    try {
-      const saved = localStorage.getItem(FAV_AI_KEY)
-      if (saved) favorites = JSON.parse(saved)
-    } catch (e) {
-      console.error('Failed to parse favorites', e)
-    }
-
-    const newItem = {
-      prompt,
-      model,
-      size,
-      seed,
-      style: style || 'none',
-      url: imageUrl,
-      timestamp: Date.now()
-    }
-
-    favorites.push(newItem)
-    try {
-      localStorage.setItem(FAV_AI_KEY, JSON.stringify(favorites))
-      toast('Saved to favorites!', '/favorites?tab=ai')
-    } catch (e) {
-      toast('Failed to save. LocalStorage might be full.')
-    }
+  if (!imageUrl) {
+    toast('No image to save');
+    return;
   }
+
+  let favorites = [];
+  try {
+    const saved = localStorage.getItem(FAV_AI_KEY);
+    if (saved) favorites = JSON.parse(saved);
+  } catch (e) {
+    console.error('Failed to parse favorites', e);
+  }
+
+  if (favorites.length >= 50) {
+    setErrorPopup({
+      emoji: '⚠️',
+      title: 'Favorites almost full',
+      desc: `You already have ${favorites.length} images in favorites. Consider deleting some to make room.`
+    });
+  }
+
+  const newItem = {
+    prompt,
+    model,
+    size,
+    seed,
+    style: style || 'none',
+    url: imageUrl,
+    timestamp: Date.now()
+  };
+
+  favorites.push(newItem);
+
+  try {
+    localStorage.setItem(FAV_AI_KEY, JSON.stringify(favorites));
+    toast('Saved to favorites!', '/favorites?tab=ai');
+  } catch (e) {
+    toast('Failed to save. LocalStorage might be full.');
+  }
+}
 
   function handleClickRecent(item) {
     setImgPrompt(item.prompt)
