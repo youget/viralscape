@@ -13,9 +13,9 @@ export default function GameLobby() {
     {
       name: 'Rabbit',
       icon: '🐇',
-      desc: 'endless runner (soon™) — currently hopping through legal loopholes',
-      href: '#',
-      status: 'soon',
+      desc: 'endless runner — hop or drop. literally.',
+      href: '/game/rabbit',
+      status: 'live',
     },
     {
       name: 'Mystery',
