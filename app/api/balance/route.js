@@ -1,5 +1,5 @@
 export async function GET() {
-  const key = process.env.POLLI_PK
+  const key = process.env.NEXT_PUBLIC_POLLI_PK
   if (!key) {
     return Response.json({ balance: 0, currency: 'pollen' })
   }
