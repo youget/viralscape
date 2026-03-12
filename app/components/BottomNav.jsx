@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Home, Play, Bot, Star, ExternalLink, Gamepad2 } from 'lucide-react'
 
 const popupData = {
@@ -13,11 +14,6 @@ const popupData = {
     title: "IG? Not yet fam.",
     desc: "Meta said 'talk to my lawyer.' So yeah... we're working on it. Somewhere between never and eventually.",
   },
-  game: {
-    emoji: '🎮',
-    title: "Games? In THIS economy?",
-    desc: "We're still figuring out how to make games without breaking the internet. Check back when we've leveled up. Currently stuck on the tutorial.",
-  },
 }
 
 const subMenus = {
@@ -29,16 +25,10 @@ const subMenus = {
   ai: [
     { label: 'Chat', icon: '💬', href: '/ai?tab=chat' },
     { label: 'Image', icon: '🖼️', href: '/ai?tab=image' },
-    { label: 'Game', icon: '🎮', popup: 'game' },
   ],
   favorites: [
     { label: 'Videos', icon: '▶', href: '/favorites?tab=videos' },
     { label: 'AI Stuff', icon: '⚡', href: '/favorites?tab=ai' },
-  ],
-  game: [
-    { label: 'Rabbit', icon: '🐇', popup: 'game' },
-    { label: 'Dopamine', icon: '🧠', href: '/game' },
-    { label: 'Mystery', icon: '❓', popup: 'game' },
   ],
 }
 
@@ -47,13 +37,16 @@ const navItems = [
   { icon: Play, label: 'Videos', menu: 'videos' },
   { icon: Bot, label: 'AI', menu: 'ai' },
   { icon: Star, label: 'Favs', menu: 'favorites' },
-  { icon: Gamepad2, label: 'Game', menu: 'game' },
+  { icon: Gamepad2, label: 'Game', href: '/game' },
   { icon: ExternalLink, label: 'Pollin', href: 'https://enter.pollinations.ai', external: true },
 ]
 
 export default function BottomNav() {
+  const pathname = usePathname()
   const [activeMenu, setActiveMenu] = useState(null)
   const [popup, setPopup] = useState(null)
+
+  const isGameActive = pathname?.startsWith('/game/') || pathname === '/game'
 
   const handleNav = (item) => {
     if (item.href && !item.external) {
@@ -115,7 +108,17 @@ export default function BottomNav() {
         <div className="flex items-center justify-around h-[68px] max-w-lg mx-auto px-2">
           {navItems.map((item, i) => {
             const Icon = item.icon
-            const isActive = activeMenu === item.menu
+            let isActive = false
+            if (item.href === '/') {
+              isActive = pathname === '/'
+            } else if (item.href === '/game') {
+              isActive = isGameActive
+            } else if (item.href) {
+              isActive = pathname === item.href
+            } else if (item.menu) {
+              isActive = activeMenu === item.menu
+            }
+
             return (
               <button
                 key={i}
