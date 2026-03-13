@@ -18,6 +18,13 @@ export default function GameLobby() {
       status: 'live',
     },
     {
+    name: 'Digital Pet',
+    icon: '🐣',
+    desc: 'raise your lil dopamine buddy. feed it or else.',
+    href: '/game/pet',
+    status: 'live',
+    },
+    {
       name: 'Mystery',
       icon: '❓',
       desc: 'literally no one knows. not even us.',
