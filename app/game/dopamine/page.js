@@ -15,13 +15,14 @@ export default function GamePage() {
   const [token, setToken] = useState(0)
   const [inventory, setInventory] = useState({ food: 0, toy: 0, medicine: 0 })
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [totalClicks, setTotalClicks] = useState(0)
 
   useEffect(() => {
     const saved = localStorage.getItem(GAME_STORAGE_KEY)
     if (saved) {
-      const { 
+      const { totalClicks: savedClicks,
         score, clickPower, autoClickerActive, autoClickerEndTime, autoClickerCount,
-        token, inventory 
+        token, inventory
       } = JSON.parse(saved)
       setScore(score || 0)
       setClickPower(clickPower || 1)
@@ -30,15 +31,16 @@ export default function GamePage() {
       setAutoClickerCount(autoClickerCount || 0)
       setToken(token || 0)
       setInventory(inventory || { food: 0, toy: 0, medicine: 0 })
+      setTotalClicks(savedClicks || 0)
     }
   }, [])
 
   useEffect(() => {
     localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify({ 
       score, clickPower, autoClickerActive, autoClickerEndTime, autoClickerCount,
-      token, inventory 
+      token, inventory, totalClicks
     }))
-  }, [score, clickPower, autoClickerActive, autoClickerEndTime, autoClickerCount, token, inventory])
+  }, [score, clickPower, autoClickerActive, autoClickerEndTime, autoClickerCount, token, inventory, totalClicks])
 
   useEffect(() => {
     if (!autoClickerActive) return
@@ -57,6 +59,7 @@ export default function GamePage() {
 
   const handleClick = () => {
     setScore(prev => prev + clickPower)
+    setTotalClicks(prev => prev + 1)
   }
 
   const buyUpgrade = () => {
