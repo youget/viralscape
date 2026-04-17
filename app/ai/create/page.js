@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Sparkles, Shuffle, Download, Loader2, ChevronDown, ExternalLink, Key,
+import { Sparkles, Shuffle, Download, Loader2, ChevronDown, ExternalLink,
   RefreshCw, Play, Music, Film, ImageIcon, X, Heart, Copy, Trash2 } from 'lucide-react'
 import { toast } from '../../components/Toast'
 import { saveImage, getRecentImages, compressImage, compressImageToSize, toggleFavorite, clearRecentOnly } from '../../lib/imagedb'
@@ -177,8 +177,8 @@ export default function CreatePage() {
   const currentStyle = STYLES.find(s => s.id === imgStyle) || STYLES[0]
 
   function getModelTag(m) {
-    if (m.tier === 'free') return ' ✨'
-    return hasKey() ? '' : ' 🔑'
+    if (m.tier === 'free') return ' · free'
+    return hasKey() ? '' : ' · key'
   }
 
   function selectModel(m) {
@@ -279,59 +279,54 @@ export default function CreatePage() {
   }
 
   const tabs = [
-    { id: 'image', label: 'Image', icon: ImageIcon },
-    { id: 'audio', label: 'Audio', icon: Music },
-    { id: 'video', label: 'Video', icon: Film },
+    { id: 'image', label: 'Image' },
+    { id: 'audio', label: 'Audio' },
+    { id: 'video', label: 'Video' },
   ]
 
   return (
     <div className="px-4 py-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-black vs-text text-center mb-1">AI <span className="vs-gradient-text">Create</span></h1>
-      <p className="text-xs vs-text-sub text-center mb-4">generate images, audio & video</p>
+      <h1 className="text-2xl font-black vs-text text-center mb-1">AI <span className="vs-gradient-text">Playground</span></h1>
+      <p className="text-xs vs-text-sub text-center mb-4">create unhinged stuff with artificial brainpower</p>
 
-      {/* Balance bar */}
+      {/* Balance + key bar */}
       <div className="flex items-center justify-center gap-2 mb-5 flex-wrap">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full vs-card border vs-border text-[10px]">
-          <Sparkles size={10} style={{ color: 'var(--vs-accent)' }} />
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full vs-card border vs-border text-[10px]">
           {balance !== null
-            ? <span className="vs-text-sub">{balance > 0 ? `${balance.toFixed(3)} pollen` : 'Pollen depleted'}</span>
+            ? <span className="vs-text-sub">{balance > 0 ? `${balance.toFixed(3)} pollen` : 'pollen depleted'}</span>
             : <span className="vs-text-sub">Loading...</span>}
-          {balance !== null && balance <= 0 && !hasKey() && (
-            <button onClick={() => { setKeyReason('quota'); setShowKeyPopup(true) }}
-              className="ml-1 px-2 py-0.5 rounded text-[9px] font-bold text-white" style={{ backgroundColor: 'var(--vs-accent)' }}>
-              Add Key
+          {userKey ? (
+            <button onClick={() => { setKeyReason('manage'); setShowKeyPopup(true) }}
+              className="text-[10px] font-semibold vs-text border-l vs-border pl-2 ml-1">
+              key active
+            </button>
+          ) : (
+            <button onClick={() => setShowKeyPopup(true)}
+              className="text-[10px] font-semibold vs-text border-l vs-border pl-2 ml-1">
+              add key
             </button>
           )}
         </div>
-        {userKey && (
-          <div className="flex items-center gap-1 px-2 py-1 rounded-full vs-card border vs-border text-[10px]">
-            <Key size={9} style={{ color: 'var(--vs-accent)' }} />
-            <span className="vs-text-sub">Key active</span>
-            <button onClick={handleKeyClear} className="ml-1 vs-text-sub hover:underline text-[9px]">remove</button>
-          </div>
-        )}
       </div>
 
       {/* Tab bar */}
       <div className="flex gap-1 mb-6 vs-card border vs-border rounded-xl p-1">
-        {tabs.map(t => { const Icon = t.icon; return (
+        {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className="flex-1 py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+            className="flex-1 py-2.5 rounded-lg text-xs font-bold transition-all"
             style={{ backgroundColor: tab === t.id ? 'var(--vs-accent)' : 'transparent', color: tab === t.id ? '#fff' : 'var(--vs-text-sub)' }}>
-            <Icon size={14} />{t.label}
+            {t.label}
           </button>
-        )})}
+        ))}
       </div>
 
       {/* ── IMAGE ── */}
       {tab === 'image' && (
         <div>
-          {/* Model picker */}
           <div className="mb-4">
             <p className="text-xs font-semibold vs-text mb-2">Model</p>
             <button onClick={() => setShowModelPicker(!showModelPicker)}
               className="flex items-center gap-2 px-3 py-2 rounded-xl vs-card border vs-border text-xs font-semibold vs-text w-full">
-              <Sparkles size={12} style={{ color: 'var(--vs-accent)' }} />
               <span className="flex-1 text-left">{currentImgModel.label}{getModelTag(currentImgModel)}</span>
               <ChevronDown size={14} className="vs-text-sub" style={{ transform: showModelPicker ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
             </button>
@@ -341,15 +336,15 @@ export default function CreatePage() {
                   <button key={m.id} onClick={() => selectModel(m)}
                     className="w-full flex items-center gap-2 px-3 py-2.5 text-xs vs-hover border-b vs-border last:border-b-0"
                     style={{ color: imgModel === m.id ? 'var(--vs-accent)' : 'var(--vs-text)' }}>
-                    <span className="flex-1 text-left font-semibold">{m.label}{getModelTag(m)}</span>
+                    <span className="flex-1 text-left font-semibold">{m.label}</span>
+                    <span className="vs-text-sub text-[10px]">{m.tier === 'free' ? 'free' : 'key'}</span>
                   </button>
                 ))}
               </div>
             )}
-            <p className="text-[10px] vs-text-sub mt-1.5">✨ Free tier • 🔑 Requires API key</p>
+            <p className="text-[10px] vs-text-sub mt-1.5">free · no key needed &nbsp;|&nbsp; key · your own API key</p>
           </div>
 
-          {/* Size */}
           <div className="mb-4">
             <p className="text-xs font-semibold vs-text mb-2">Size</p>
             <div className="flex gap-2">
@@ -362,7 +357,6 @@ export default function CreatePage() {
             </div>
           </div>
 
-          {/* Prompt */}
           <div className="mb-4">
             <p className="text-xs font-semibold vs-text mb-2">Prompt</p>
             <textarea value={imgPrompt} onChange={e => setImgPrompt(e.target.value)}
@@ -376,12 +370,12 @@ export default function CreatePage() {
               </button>
               <label className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub cursor-pointer">
                 <input type="checkbox" checked={enhanceOn} onChange={e => setEnhanceOn(e.target.checked)} className="w-3.5 h-3.5 rounded" />
-                <Sparkles size={12} /> Enhance
+                Enhance
               </label>
               <div className="relative">
                 <button onClick={() => setShowStylePicker(!showStylePicker)}
                   className="w-full flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover">
-                  🎨 {currentStyle.label}
+                  Style: {currentStyle.label}
                   <ChevronDown size={12} style={{ transform: showStylePicker ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
                 </button>
                 {showStylePicker && (
@@ -400,7 +394,7 @@ export default function CreatePage() {
           </div>
 
           <button onClick={() => handleGenerate()} disabled={imgLoading || !imgPrompt.trim()}
-            className="vs-btn w-full py-3 rounded-xl text-sm font-bold mb-6 gap-2"
+            className="vs-btn w-full py-3 rounded-xl text-sm font-bold mb-6 gap-2 flex items-center justify-center"
             style={{ opacity: imgLoading || !imgPrompt.trim() ? 0.5 : 1 }}>
             {imgLoading ? (<><Loader2 size={16} className="animate-spin" /> {loadingMsg}</>) : (<><Sparkles size={16} /> Generate</>)}
           </button>
@@ -427,10 +421,10 @@ export default function CreatePage() {
                 {imgResult.prompt.length > 80 && (
                   <button onClick={() => setReadMoreText(imgResult.prompt)} className="text-[10px] mb-2 underline" style={{ color: 'var(--vs-accent)' }}>Read more</button>
                 )}
-                <p className="text-[10px] vs-text-sub mb-3">Model: {imgResult.model} • Size: {imgResult.size} • Seed: {imgResult.seed}{imgResult.style && imgResult.style !== 'none' ? ` • ${imgResult.style}` : ''}</p>
+                <p className="text-[10px] vs-text-sub mb-3">Model: {imgResult.model} · Size: {imgResult.size} · Seed: {imgResult.seed}{imgResult.style && imgResult.style !== 'none' ? ` · ${imgResult.style}` : ''}</p>
                 <div className="flex gap-2">
-                  <button onClick={handleDownload} className="flex-1 vs-btn py-2.5 rounded-xl text-xs font-semibold gap-1"><Download size={14} /> Download</button>
-                  <button onClick={handleRegenerate} className="flex-1 vs-btn-outline py-2.5 rounded-xl text-xs font-semibold gap-1"><RefreshCw size={14} /> Regen</button>
+                  <button onClick={handleDownload} className="flex-1 vs-btn py-2.5 rounded-xl text-xs font-semibold gap-1 flex items-center justify-center"><Download size={14} /> Download</button>
+                  <button onClick={handleRegenerate} className="flex-1 vs-btn-outline py-2.5 rounded-xl text-xs font-semibold gap-1 flex items-center justify-center"><RefreshCw size={14} /> Regen</button>
                   <button onClick={handleSaveToFav} className="vs-btn-outline py-2.5 px-3 rounded-xl text-xs font-semibold"
                     style={{ borderColor: isFav ? 'var(--vs-accent)' : undefined, color: isFav ? 'var(--vs-accent)' : undefined }}>
                     <Heart size={14} fill={isFav ? 'var(--vs-accent)' : 'none'} />
@@ -454,11 +448,11 @@ export default function CreatePage() {
                   <button key={item.id || i} onClick={() => handleClickRecent(item)}
                     className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border vs-border vs-hover relative">
                     {item.thumbnail ? <img src={item.thumbnail} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full vs-bg2 flex items-center justify-center"><ImageIcon size={14} className="vs-text-sub" /></div>}
-                    {item.favorite && <span className="absolute top-0.5 right-0.5 text-[8px]">❤️</span>}
+                    {item.favorite && <span className="absolute top-0.5 right-0.5 text-[8px]">♥</span>}
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] vs-text-sub mt-2">Last 10 generations. Use ❤️ to save permanently.</p>
+              <p className="text-[10px] vs-text-sub mt-2">Last 10 generations. Use ♥ to save permanently.</p>
             </div>
           )}
         </div>
@@ -468,7 +462,7 @@ export default function CreatePage() {
       {tab === 'audio' && (
         <div>
           <div className="vs-card border vs-border rounded-xl p-3 mb-5 text-center">
-            <p className="text-[10px] vs-text-sub">Powered by <strong className="vs-text">ElevenLabs</strong> via Pollinations • API key required</p>
+            <p className="text-[10px] vs-text-sub">Powered by <strong className="vs-text">ElevenLabs</strong> via Pollinations · API key required</p>
           </div>
           <div className="flex gap-2 mb-5">
             {[['tts', 'TTS'], ['music', 'Music']].map(([mode, label]) => (
@@ -500,12 +494,12 @@ export default function CreatePage() {
           <div className="mb-4">
             <p className="text-xs font-semibold vs-text mb-2">{voiceMode === 'tts' ? 'Text to speak' : 'Describe the music'}</p>
             <textarea value={voiceText} onChange={e => setVoiceText(e.target.value)}
-              placeholder={voiceMode === 'tts' ? 'Type what you want to hear...' : 'A chill lo-fi beat with rain sounds...'} rows={3}
-              className="w-full py-3 px-4 rounded-xl vs-card border vs-border text-sm vs-text outline-none resize-none"
+              placeholder={voiceMode === 'tts' ? 'Type what you want to hear...' : 'A chill lo-fi beat with rain sounds...'}
+              rows={3} className="w-full py-3 px-4 rounded-xl vs-card border vs-border text-sm vs-text outline-none resize-none"
               style={{ backgroundColor: 'var(--vs-card)' }} />
           </div>
           <button onClick={handleVoiceGenerate} disabled={voiceLoading || !voiceText.trim()}
-            className="vs-btn w-full py-3 rounded-xl text-sm font-bold mb-6 gap-2"
+            className="vs-btn w-full py-3 rounded-xl text-sm font-bold mb-6 gap-2 flex items-center justify-center"
             style={{ opacity: voiceLoading || !voiceText.trim() ? 0.5 : 1 }}>
             {voiceLoading ? (<><Loader2 size={16} className="animate-spin" /> Generating...</>) : (<><Play size={16} /> Generate</>)}
           </button>
@@ -527,7 +521,7 @@ export default function CreatePage() {
       {tab === 'video' && (
         <div>
           <div className="vs-card border vs-border rounded-xl p-3 mb-4 text-center">
-            <p className="text-[10px] vs-text-sub">Model: <strong className="vs-text">Grok Video</strong> • API key required</p>
+            <p className="text-[10px] vs-text-sub">Model: <strong className="vs-text">Grok Video</strong> · API key required</p>
           </div>
           <div className="mb-4">
             <p className="text-xs font-semibold vs-text mb-2">Duration: {videoDuration}s</p>
@@ -541,7 +535,7 @@ export default function CreatePage() {
               style={{ backgroundColor: 'var(--vs-card)' }} />
           </div>
           <button onClick={handleVideoGenerate} disabled={videoLoading || !videoPrompt.trim()}
-            className="vs-btn w-full py-3 rounded-xl text-sm font-bold mb-6 gap-2"
+            className="vs-btn w-full py-3 rounded-xl text-sm font-bold mb-6 gap-2 flex items-center justify-center"
             style={{ opacity: videoLoading || !videoPrompt.trim() ? 0.5 : 1 }}>
             {videoLoading ? (<><Loader2 size={16} className="animate-spin" /> Loading...</>) : (<><Film size={16} /> Generate</>)}
           </button>
@@ -554,7 +548,7 @@ export default function CreatePage() {
                   className="vs-btn w-full py-2 rounded-xl text-xs font-semibold gap-1 flex items-center justify-center">
                   <Download size={14} /> Download
                 </a>
-                <p className="text-[10px] vs-text-sub text-center mt-2">Video is not saved — download before leaving.</p>
+                <p className="text-[10px] vs-text-sub text-center mt-2">Video not saved — download before leaving.</p>
               </div>
             </div>
           )}
@@ -583,7 +577,7 @@ export default function CreatePage() {
           <div className="vs-card rounded-2xl p-6 max-w-sm w-full text-center border vs-border" onClick={e => e.stopPropagation()}>
             <p className="text-4xl mb-3">🗑️</p>
             <h3 className="text-lg font-bold vs-text mb-2">Clear recent?</h3>
-            <p className="text-sm vs-text-sub mb-5">Non-favorited images will be removed. Your ❤️ favorites stay safe.</p>
+            <p className="text-sm vs-text-sub mb-5">Non-favorited images will be removed. Your ♥ favorites stay safe.</p>
             <div className="flex gap-2">
               <button onClick={() => setConfirmClearRecent(false)} className="flex-1 vs-btn-outline px-4 py-2.5 rounded-xl text-sm font-semibold">Cancel</button>
               <button onClick={handleClearRecent} className="flex-1 vs-btn px-4 py-2.5 rounded-xl text-sm font-semibold">Clear</button>
@@ -598,23 +592,27 @@ export default function CreatePage() {
           <div className="vs-card rounded-2xl p-6 max-w-sm w-full border vs-border" onClick={e => e.stopPropagation()}>
             <div className="text-center mb-4">
               <p className="text-4xl mb-2">{keyReason === 'quota' ? '😭' : '🔑'}</p>
-              <h3 className="text-lg font-bold vs-text mb-1">{keyReason === 'quota' ? 'Pollen depleted' : 'API key required'}</h3>
+              <h3 className="text-lg font-bold vs-text mb-1">
+                {keyReason === 'quota' ? 'Pollen depleted' : userKey && keyReason === 'manage' ? 'Manage Key' : 'Add API Key'}
+              </h3>
               <p className="text-xs vs-text-sub leading-relaxed">
-                {keyReason === 'quota' ? 'Server pollen is out. Add your own key to keep generating.' : 'This feature requires your own Pollinations API key.'}
+                {keyReason === 'quota' ? 'Server pollen is out. Add your own key to keep generating.' : 'Your personal Pollinations API key.'}
               </p>
             </div>
-            <input type="text" value={keyInput} onChange={e => setKeyInput(e.target.value)}
-              placeholder="Paste your API key..."
-              className="w-full py-3 px-4 rounded-xl vs-card border vs-border text-sm vs-text outline-none mb-4"
-              style={{ backgroundColor: 'var(--vs-bg)' }}
-              onKeyDown={e => e.key === 'Enter' && handleKeySave()} />
-            <button onClick={handleKeySave} disabled={!keyInput.trim()}
-              className="vs-btn w-full py-2.5 rounded-xl text-sm font-semibold mb-3"
-              style={{ opacity: keyInput.trim() ? 1 : 0.5 }}>
-              Save Key
-            </button>
+            {(!userKey || keyReason !== 'manage') && (
+              <>
+                <input type="text" value={keyInput} onChange={e => setKeyInput(e.target.value)}
+                  placeholder="Paste your API key..." onKeyDown={e => e.key === 'Enter' && handleKeySave()}
+                  className="w-full py-3 px-4 rounded-xl vs-card border vs-border text-sm vs-text outline-none mb-4"
+                  style={{ backgroundColor: 'var(--vs-bg)' }} />
+                <button onClick={handleKeySave} disabled={!keyInput.trim()}
+                  className="vs-btn w-full py-2.5 rounded-xl text-sm font-semibold mb-3"
+                  style={{ opacity: keyInput.trim() ? 1 : 0.5 }}>
+                  Save Key
+                </button>
+              </>
+            )}
             <div className="text-center mb-3">
-              <p className="text-[10px] vs-text-sub mb-2">Don't have a key?</p>
               <a href="https://enter.pollinations.ai/" target="_blank" rel="noopener noreferrer"
                 className="vs-btn-outline px-4 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-1">
                 Get one at Pollinations <ExternalLink size={12} />
@@ -622,13 +620,13 @@ export default function CreatePage() {
             </div>
             {userKey && (
               <div className="pt-3 border-t vs-border text-center">
-                <p className="text-[10px] vs-text-sub mb-1">Active key detected</p>
+                <p className="text-[10px] vs-text-sub mb-1">Active key: {userKey.slice(0, 8)}...</p>
                 <button onClick={() => { handleKeyClear(); setShowKeyPopup(false) }} className="text-[10px] vs-text-sub hover:underline">Remove key</button>
               </div>
             )}
             <button onClick={() => { setShowKeyPopup(false); setPendingAction(null) }}
               className="w-full text-center text-[10px] vs-text-sub hover:underline mt-3">
-              Maybe later
+              Close
             </button>
           </div>
         </div>
