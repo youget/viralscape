@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Sparkles, Shuffle, Download, Loader2, ChevronDown, ExternalLink,
-  RefreshCw, Play, Music, Film, ImageIcon, X, Heart, Copy, Trash2 } from 'lucide-react'
+  RefreshCw, Play, Music, Film, ImageIcon, X, Heart, Copy, Trash2,
+  Mic, ArrowRight, Wand2 } from 'lucide-react'
 import { toast } from '../../components/Toast'
 import { saveImage, getRecentImages, compressImage, compressImageToSize, toggleFavorite, clearRecentOnly } from '../../lib/imagedb'
 
@@ -107,9 +108,13 @@ export default function CreatePage() {
   const [imgResult, setImgResult] = useState(null)
   const [imgError, setImgError] = useState(null)
   const [loadingMsg, setLoadingMsg] = useState('')
-  const [enhanceOn, setEnhanceOn] = useState(false)
   const [recent, setRecent] = useState([])
   const [isFav, setIsFav] = useState(false)
+
+  // Enhance popup state
+  const [showEnhancePopup, setShowEnhancePopup] = useState(false)
+  const [enhancedPrompt, setEnhancedPrompt] = useState('')
+  const [enhancing, setEnhancing] = useState(false)
 
   // Audio state
   const [voiceMode, setVoiceMode] = useState('tts')
@@ -186,6 +191,37 @@ export default function CreatePage() {
     setImgModel(m.id); setShowModelPicker(false)
   }
 
+  async function handleEnhanceClick() {
+    if (!imgPrompt.trim() || enhancing) return
+    setEnhancing(true)
+    setShowEnhancePopup(true)
+    setEnhancedPrompt('')
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'chat',
+          messages: [
+            { role: 'system', content: 'You are an expert AI image prompt engineer. Enhance the given prompt to be more vivid, detailed, and descriptive for better image generation. Return ONLY the enhanced prompt text, nothing else — no explanations, no quotes, no labels.' },
+            { role: 'user', content: imgPrompt.trim() }
+          ],
+          model: 'gemini-fast',
+        })
+      })
+      const data = await res.json()
+      setEnhancedPrompt(data.result || 'Enhancement failed. Try again.')
+    } catch {
+      setEnhancedPrompt('Connection error. Try again.')
+    }
+    setEnhancing(false)
+  }
+
+  function handleUseEnhanced() {
+    if (enhancedPrompt) setImgPrompt(enhancedPrompt)
+    setShowEnhancePopup(false)
+  }
+
   async function handleGenerate(overrideSeed) {
     if (!imgPrompt.trim() || imgLoading) return
     if (currentImgModel.tier === 'byop' && !hasKey()) { openKeyPopup('byop_image', () => doGenerate(overrideSeed)); return }
@@ -204,7 +240,7 @@ export default function CreatePage() {
       const res = await fetch('/api/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: fullPrompt, model: imgModel, width: size.w, height: size.h, seed, enhance: enhanceOn, ...(k && { userKey: k }) }),
+        body: JSON.stringify({ prompt: fullPrompt, model: imgModel, width: size.w, height: size.h, seed, ...(k && { userKey: k }) }),
       })
 
       if (!res.ok) {
@@ -279,9 +315,9 @@ export default function CreatePage() {
   }
 
   const tabs = [
-    { id: 'image', label: 'Image' },
-    { id: 'audio', label: 'Audio' },
-    { id: 'video', label: 'Video' },
+    { id: 'image', label: 'Image', icon: ImageIcon },
+    { id: 'audio', label: 'Audio', icon: Mic },
+    { id: 'video', label: 'Video', icon: Film },
   ]
 
   return (
@@ -307,17 +343,29 @@ export default function CreatePage() {
             </button>
           )}
         </div>
+        <a
+          href="/ai/chat"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-full vs-card border vs-border text-[10px] font-semibold vs-text vs-hover transition-all"
+        >
+          Chat Tools <ArrowRight size={10} />
+        </a>
       </div>
 
       {/* Tab bar */}
       <div className="flex gap-1 mb-6 vs-card border vs-border rounded-xl p-1">
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className="flex-1 py-2.5 rounded-lg text-xs font-bold transition-all"
-            style={{ backgroundColor: tab === t.id ? 'var(--vs-accent)' : 'transparent', color: tab === t.id ? '#fff' : 'var(--vs-text-sub)' }}>
-            {t.label}
-          </button>
-        ))}
+        {tabs.map(t => {
+          const TabIcon = t.icon
+          return (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className="flex-1 py-2.5 rounded-lg text-xs font-bold transition-all"
+              style={{ backgroundColor: tab === t.id ? 'var(--vs-accent)' : 'transparent', color: tab === t.id ? '#fff' : 'var(--vs-text-sub)' }}>
+              <div className="flex items-center justify-center gap-1.5">
+                <TabIcon size={13} />
+                <span>{t.label}</span>
+              </div>
+            </button>
+          )
+        })}
       </div>
 
       {/* ── IMAGE ── */}
@@ -368,10 +416,14 @@ export default function CreatePage() {
                 className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover">
                 <Shuffle size={12} /> Random
               </button>
-              <label className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub cursor-pointer">
-                <input type="checkbox" checked={enhanceOn} onChange={e => setEnhanceOn(e.target.checked)} className="w-3.5 h-3.5 rounded" />
-                Enhance
-              </label>
+              <button
+                onClick={handleEnhanceClick}
+                disabled={!imgPrompt.trim() || enhancing}
+                className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover transition-all"
+                style={{ opacity: !imgPrompt.trim() ? 0.5 : 1 }}
+              >
+                <Wand2 size={12} /> {enhancing ? '...' : 'Enhance'}
+              </button>
               <div className="relative">
                 <button onClick={() => setShowStylePicker(!showStylePicker)}
                   className="w-full flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover">
@@ -552,6 +604,52 @@ export default function CreatePage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── ENHANCE POPUP ── */}
+      {showEnhancePopup && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-4 pb-24" onClick={() => { if (!enhancing) setShowEnhancePopup(false) }}>
+          <div className="vs-card rounded-2xl border vs-border w-full max-w-lg max-h-[65vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b vs-border flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <Wand2 size={14} className="vs-text-sub" />
+                <p className="text-sm font-bold vs-text">Enhanced Prompt</p>
+              </div>
+              {!enhancing && (
+                <button onClick={() => setShowEnhancePopup(false)} className="vs-text-sub p-1.5 vs-hover rounded-lg">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              {enhancing ? (
+                <div className="flex items-center justify-center gap-2 py-6">
+                  <Loader2 size={18} className="animate-spin vs-text-sub" />
+                  <p className="text-sm vs-text-sub">Enhancing your prompt...</p>
+                </div>
+              ) : (
+                <p className="text-sm vs-text leading-relaxed">{enhancedPrompt}</p>
+              )}
+            </div>
+            {!enhancing && enhancedPrompt && !enhancedPrompt.includes('failed') && !enhancedPrompt.includes('error') && (
+              <div className="flex gap-2 p-4 border-t vs-border flex-shrink-0">
+                <button onClick={handleUseEnhanced} className="flex-1 vs-btn py-2.5 rounded-xl text-xs font-semibold">
+                  Use it →
+                </button>
+                <button onClick={() => setShowEnhancePopup(false)} className="flex-1 vs-btn-outline py-2.5 rounded-xl text-xs font-semibold">
+                  Close
+                </button>
+              </div>
+            )}
+            {!enhancing && (enhancedPrompt.includes('failed') || enhancedPrompt.includes('error')) && (
+              <div className="p-4 border-t vs-border flex-shrink-0">
+                <button onClick={() => setShowEnhancePopup(false)} className="w-full vs-btn-outline py-2.5 rounded-xl text-xs font-semibold">
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
