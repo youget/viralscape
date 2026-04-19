@@ -1,53 +1,52 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Sparkles, Shuffle, Download, Loader2, ChevronDown, ExternalLink,
-  RefreshCw, Play, Music, Film, ImageIcon, X, Heart, Copy, Trash2,
-  Mic, ArrowRight, Wand2 } from 'lucide-react'
+  RefreshCw, Play, Film, ImageIcon, X, Heart, Copy, Trash2, ArrowRight } from 'lucide-react'
 import { toast } from '../../components/Toast'
 import { saveImage, getRecentImages, compressImage, compressImageToSize, toggleFavorite, clearRecentOnly } from '../../lib/imagedb'
 
 const USER_KEY_STORAGE = 'vs-user-polli-key'
 
 const IMAGE_MODELS = [
-  { id: 'flux',          label: 'Flux Schnell',     tier: 'free' },
-  { id: 'zimage',        label: 'Z-Image Turbo',    tier: 'byop' },
-  { id: 'klein',         label: 'FLUX.2 Klein 4B',  tier: 'byop' },
-  { id: 'gptimage',      label: 'GPT Image 1 Mini', tier: 'byop' },
-  { id: 'qwen-image',    label: 'Qwen Image Plus',  tier: 'byop' },
-  { id: 'wan-image',     label: 'Wan 2.7 Image',    tier: 'byop' },
-  { id: 'kontext',       label: 'FLUX.1 Kontext',   tier: 'byop' },
-  { id: 'gptimage-large',label: 'GPT Image 1.5',    tier: 'byop' },
+  { id: 'flux',           label: 'Flux Schnell',     tier: 'free' },
+  { id: 'zimage',         label: 'Z-Image Turbo',    tier: 'byop' },
+  { id: 'klein',          label: 'FLUX.2 Klein 4B',  tier: 'byop' },
+  { id: 'gptimage',       label: 'GPT Image 1 Mini', tier: 'byop' },
+  { id: 'qwen-image',     label: 'Qwen Image Plus',  tier: 'byop' },
+  { id: 'wan-image',      label: 'Wan 2.7 Image',    tier: 'byop' },
+  { id: 'kontext',        label: 'FLUX.1 Kontext',   tier: 'byop' },
+  { id: 'gptimage-large', label: 'GPT Image 1.5',    tier: 'byop' },
 ]
 
 const STYLES = [
-  { id: 'none', label: 'None', suffix: '' },
-  { id: 'realistic', label: 'Realistic', suffix: ', photorealistic, highly detailed, 8K resolution' },
-  { id: '3d', label: '3D Render', suffix: ', 3D render, octane render, cinema 4D, highly detailed' },
-  { id: 'cartoon', label: 'Cartoon', suffix: ', cartoon style, vibrant colors, playful, fun' },
-  { id: 'anime', label: 'Anime', suffix: ', anime style, manga art, Studio Ghibli inspired' },
-  { id: 'pixel', label: 'Pixel Art', suffix: ', pixel art, 16-bit retro game style' },
+  { id: 'none',       label: 'None',       suffix: '' },
+  { id: 'realistic',  label: 'Realistic',  suffix: ', photorealistic, highly detailed, 8K resolution' },
+  { id: '3d',         label: '3D Render',  suffix: ', 3D render, octane render, cinema 4D, highly detailed' },
+  { id: 'cartoon',    label: 'Cartoon',    suffix: ', cartoon style, vibrant colors, playful, fun' },
+  { id: 'anime',      label: 'Anime',      suffix: ', anime style, manga art, Studio Ghibli inspired' },
+  { id: 'pixel',      label: 'Pixel Art',  suffix: ', pixel art, 16-bit retro game style' },
   { id: 'watercolor', label: 'Watercolor', suffix: ', watercolor painting, soft colors, artistic' },
-  { id: 'oil', label: 'Oil Paint', suffix: ', oil painting, classical art, rich textures' },
-  { id: 'sketch', label: 'Sketch', suffix: ', pencil sketch, hand drawn, detailed linework' },
-  { id: 'cyberpunk', label: 'Cyberpunk', suffix: ', cyberpunk style, neon lights, futuristic city' },
-  { id: 'fantasy', label: 'Fantasy', suffix: ', fantasy art, magical, ethereal, mystical lighting' },
-  { id: 'horror', label: 'Horror', suffix: ', dark horror style, creepy, eerie atmosphere' },
-  { id: 'vintage', label: 'Vintage', suffix: ', vintage photography, retro, film grain, 70s aesthetic' },
-  { id: 'minimal', label: 'Minimal', suffix: ', minimalist, clean lines, simple, modern design' },
-  { id: 'cinematic', label: 'Cinematic', suffix: ', cinematic shot, movie scene, dramatic lighting' },
-  { id: 'popart', label: 'Pop Art', suffix: ', pop art style, Andy Warhol, bold colors, graphic' },
-  { id: 'sticker', label: 'Sticker', suffix: ', sticker design, die-cut, white border, cute' },
-  { id: 'logo', label: 'Logo', suffix: ', logo design, professional, vector style, clean' },
-  { id: 'isometric', label: 'Isometric', suffix: ', isometric 3D, game asset, clean, detailed' },
-  { id: 'neon', label: 'Neon Glow', suffix: ', neon glow effect, dark background, vibrant neon colors' },
+  { id: 'oil',        label: 'Oil Paint',  suffix: ', oil painting, classical art, rich textures' },
+  { id: 'sketch',     label: 'Sketch',     suffix: ', pencil sketch, hand drawn, detailed linework' },
+  { id: 'cyberpunk',  label: 'Cyberpunk',  suffix: ', cyberpunk style, neon lights, futuristic city' },
+  { id: 'fantasy',    label: 'Fantasy',    suffix: ', fantasy art, magical, ethereal, mystical lighting' },
+  { id: 'horror',     label: 'Horror',     suffix: ', dark horror style, creepy, eerie atmosphere' },
+  { id: 'vintage',    label: 'Vintage',    suffix: ', vintage photography, retro, film grain, 70s aesthetic' },
+  { id: 'minimal',    label: 'Minimal',    suffix: ', minimalist, clean lines, simple, modern design' },
+  { id: 'cinematic',  label: 'Cinematic',  suffix: ', cinematic shot, movie scene, dramatic lighting' },
+  { id: 'popart',     label: 'Pop Art',    suffix: ', pop art style, Andy Warhol, bold colors, graphic' },
+  { id: 'sticker',    label: 'Sticker',    suffix: ', sticker design, die-cut, white border, cute' },
+  { id: 'logo',       label: 'Logo',       suffix: ', logo design, professional, vector style, clean' },
+  { id: 'isometric',  label: 'Isometric',  suffix: ', isometric 3D, game asset, clean, detailed' },
+  { id: 'neon',       label: 'Neon Glow',  suffix: ', neon glow effect, dark background, vibrant neon colors' },
 ]
 
 const SIZES = [
-  { label: '1:1', w: 1024, h: 1024 },
+  { label: '1:1',  w: 1024, h: 1024 },
   { label: '16:9', w: 1344, h: 768 },
-  { label: '9:16', w: 768, h: 1344 },
-  { label: '4:3', w: 1152, h: 896 },
-  { label: '3:4', w: 896, h: 1152 },
+  { label: '9:16', w: 768,  h: 1344 },
+  { label: '4:3',  w: 1152, h: 896 },
+  { label: '3:4',  w: 896,  h: 1152 },
 ]
 
 const VOICES = ['alloy','echo','nova','shimmer','onyx','fable','coral','sage','rachel','bella','charlotte','sarah','adam','josh','daniel','james']
@@ -72,15 +71,15 @@ const LOADING_MSGS = [
 ]
 
 const ERR = {
-  quota_exceeded: { emoji: '😭', title: 'Pollen depleted', desc: "Server pollen is out. Add your own API key to keep generating." },
-  invalid_key:    { emoji: '🫠', title: "That key ain't it", desc: 'Double-check your API key and try again.' },
-  rate_limit:     { emoji: '⏳', title: 'Rate limit hit', desc: 'Too many requests. Wait a moment and try again.' },
-  forbidden:      { emoji: '🚫', title: 'Access denied', desc: "Your key might not have access to this model." },
-  server_error:   { emoji: '💤', title: 'Server took a nap', desc: 'Something went wrong on our end. Try again.' },
-  api_error:      { emoji: '🫣', title: 'Something went sideways', desc: 'Give it another shot.' },
+  quota_exceeded: { emoji: '😭', title: 'Pollen depleted',         desc: "Server pollen is out. Add your own API key to keep generating." },
+  invalid_key:    { emoji: '🫠', title: "That key ain't it",        desc: 'Double-check your API key and try again.' },
+  rate_limit:     { emoji: '⏳', title: 'Rate limit hit',           desc: 'Too many requests. Wait a moment and try again.' },
+  forbidden:      { emoji: '🚫', title: 'Access denied',            desc: "Your key might not have access to this model." },
+  server_error:   { emoji: '💤', title: 'Server took a nap',        desc: 'Something went wrong on our end. Try again.' },
+  api_error:      { emoji: '🫣', title: 'Something went sideways',  desc: 'Give it another shot.' },
 }
 
-function getUserKey() { try { return localStorage.getItem(USER_KEY_STORAGE) || '' } catch { return '' } }
+function getUserKey()  { try { return localStorage.getItem(USER_KEY_STORAGE) || '' } catch { return '' } }
 function saveUserKey(k) { try { localStorage.setItem(USER_KEY_STORAGE, k) } catch {} }
 function clearUserKey() { try { localStorage.removeItem(USER_KEY_STORAGE) } catch {} }
 function randomLoadingMsg() { return LOADING_MSGS[Math.floor(Math.random() * LOADING_MSGS.length)] }
@@ -97,6 +96,9 @@ export default function CreatePage() {
   const [readMoreText, setReadMoreText] = useState(null)
   const [confirmClearRecent, setConfirmClearRecent] = useState(false)
 
+  // Pollen popup
+  const [showPollenPopup, setShowPollenPopup] = useState(false)
+
   // Image state
   const [imgPrompt, setImgPrompt] = useState('')
   const [imgModel, setImgModel] = useState('flux')
@@ -108,13 +110,9 @@ export default function CreatePage() {
   const [imgResult, setImgResult] = useState(null)
   const [imgError, setImgError] = useState(null)
   const [loadingMsg, setLoadingMsg] = useState('')
+  const [enhanceOn, setEnhanceOn] = useState(false)
   const [recent, setRecent] = useState([])
   const [isFav, setIsFav] = useState(false)
-
-  // Enhance popup state
-  const [showEnhancePopup, setShowEnhancePopup] = useState(false)
-  const [enhancedPrompt, setEnhancedPrompt] = useState('')
-  const [enhancing, setEnhancing] = useState(false)
 
   // Audio state
   const [voiceMode, setVoiceMode] = useState('tts')
@@ -191,37 +189,6 @@ export default function CreatePage() {
     setImgModel(m.id); setShowModelPicker(false)
   }
 
-  async function handleEnhanceClick() {
-    if (!imgPrompt.trim() || enhancing) return
-    setEnhancing(true)
-    setShowEnhancePopup(true)
-    setEnhancedPrompt('')
-    try {
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'chat',
-          messages: [
-            { role: 'system', content: 'You are an expert AI image prompt engineer. Enhance the given prompt to be more vivid, detailed, and descriptive for better image generation. Return ONLY the enhanced prompt text, nothing else — no explanations, no quotes, no labels.' },
-            { role: 'user', content: imgPrompt.trim() }
-          ],
-          model: 'gemini-fast',
-        })
-      })
-      const data = await res.json()
-      setEnhancedPrompt(data.result || 'Enhancement failed. Try again.')
-    } catch {
-      setEnhancedPrompt('Connection error. Try again.')
-    }
-    setEnhancing(false)
-  }
-
-  function handleUseEnhanced() {
-    if (enhancedPrompt) setImgPrompt(enhancedPrompt)
-    setShowEnhancePopup(false)
-  }
-
   async function handleGenerate(overrideSeed) {
     if (!imgPrompt.trim() || imgLoading) return
     if (currentImgModel.tier === 'byop' && !hasKey()) { openKeyPopup('byop_image', () => doGenerate(overrideSeed)); return }
@@ -240,7 +207,7 @@ export default function CreatePage() {
       const res = await fetch('/api/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: fullPrompt, model: imgModel, width: size.w, height: size.h, seed, ...(k && { userKey: k }) }),
+        body: JSON.stringify({ prompt: fullPrompt, model: imgModel, width: size.w, height: size.h, seed, enhance: enhanceOn, ...(k && { userKey: k }) }),
       })
 
       if (!res.ok) {
@@ -315,9 +282,9 @@ export default function CreatePage() {
   }
 
   const tabs = [
-    { id: 'image', label: 'Image', icon: ImageIcon },
-    { id: 'audio', label: 'Audio', icon: Mic },
-    { id: 'video', label: 'Video', icon: Film },
+    { id: 'image', label: 'Image' },
+    { id: 'audio', label: 'Audio' },
+    { id: 'video', label: 'Video' },
   ]
 
   return (
@@ -325,11 +292,14 @@ export default function CreatePage() {
       <h1 className="text-2xl font-black vs-text text-center mb-1">AI <span className="vs-gradient-text">Playground</span></h1>
       <p className="text-xs vs-text-sub text-center mb-4">create unhinged stuff with artificial brainpower</p>
 
-      {/* Balance + key bar */}
-      <div className="flex items-center justify-center gap-2 mb-5 flex-wrap">
+      {/* ── Balance bar — pollen left, chat tools right ── */}
+      <div className="flex items-center justify-between gap-2 mb-5">
+        {/* Pollen pill — left */}
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full vs-card border vs-border text-[10px]">
           {balance !== null
-            ? <span className="vs-text-sub">{balance > 0 ? `${balance.toFixed(3)} pollen` : 'pollen depleted'}</span>
+            ? <button onClick={() => setShowPollenPopup(true)} className="vs-text-sub hover:underline">
+                {balance > 0 ? `${balance.toFixed(3)} pollen` : 'pollen depleted'}
+              </button>
             : <span className="vs-text-sub">Loading...</span>}
           {userKey ? (
             <button onClick={() => { setKeyReason('manage'); setShowKeyPopup(true) }}
@@ -343,9 +313,10 @@ export default function CreatePage() {
             </button>
           )}
         </div>
+        {/* Chat Tools — right */}
         <a
           href="/ai/chat"
-          className="flex items-center gap-1 px-3 py-1.5 rounded-full vs-card border vs-border text-[10px] font-semibold vs-text vs-hover transition-all"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-full vs-card border vs-border text-[10px] font-semibold vs-text hover:opacity-75 transition-opacity"
         >
           Chat Tools <ArrowRight size={10} />
         </a>
@@ -353,19 +324,13 @@ export default function CreatePage() {
 
       {/* Tab bar */}
       <div className="flex gap-1 mb-6 vs-card border vs-border rounded-xl p-1">
-        {tabs.map(t => {
-          const TabIcon = t.icon
-          return (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className="flex-1 py-2.5 rounded-lg text-xs font-bold transition-all"
-              style={{ backgroundColor: tab === t.id ? 'var(--vs-accent)' : 'transparent', color: tab === t.id ? '#fff' : 'var(--vs-text-sub)' }}>
-              <div className="flex items-center justify-center gap-1.5">
-                <TabIcon size={13} />
-                <span>{t.label}</span>
-              </div>
-            </button>
-          )
-        })}
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className="flex-1 py-2.5 rounded-lg text-xs font-bold transition-all"
+            style={{ backgroundColor: tab === t.id ? 'var(--vs-accent)' : 'transparent', color: tab === t.id ? '#fff' : 'var(--vs-text-sub)' }}>
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {/* ── IMAGE ── */}
@@ -416,14 +381,10 @@ export default function CreatePage() {
                 className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover">
                 <Shuffle size={12} /> Random
               </button>
-              <button
-                onClick={handleEnhanceClick}
-                disabled={!imgPrompt.trim() || enhancing}
-                className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover transition-all"
-                style={{ opacity: !imgPrompt.trim() ? 0.5 : 1 }}
-              >
-                <Wand2 size={12} /> {enhancing ? '...' : 'Enhance'}
-              </button>
+              <label className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub cursor-pointer">
+                <input type="checkbox" checked={enhanceOn} onChange={e => setEnhanceOn(e.target.checked)} className="w-3.5 h-3.5 rounded" />
+                Enhance
+              </label>
               <div className="relative">
                 <button onClick={() => setShowStylePicker(!showStylePicker)}
                   className="w-full flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover">
@@ -607,52 +568,6 @@ export default function CreatePage() {
         </div>
       )}
 
-      {/* ── ENHANCE POPUP ── */}
-      {showEnhancePopup && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-4 pb-24" onClick={() => { if (!enhancing) setShowEnhancePopup(false) }}>
-          <div className="vs-card rounded-2xl border vs-border w-full max-w-lg max-h-[65vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b vs-border flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <Wand2 size={14} className="vs-text-sub" />
-                <p className="text-sm font-bold vs-text">Enhanced Prompt</p>
-              </div>
-              {!enhancing && (
-                <button onClick={() => setShowEnhancePopup(false)} className="vs-text-sub p-1.5 vs-hover rounded-lg">
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              {enhancing ? (
-                <div className="flex items-center justify-center gap-2 py-6">
-                  <Loader2 size={18} className="animate-spin vs-text-sub" />
-                  <p className="text-sm vs-text-sub">Enhancing your prompt...</p>
-                </div>
-              ) : (
-                <p className="text-sm vs-text leading-relaxed">{enhancedPrompt}</p>
-              )}
-            </div>
-            {!enhancing && enhancedPrompt && !enhancedPrompt.includes('failed') && !enhancedPrompt.includes('error') && (
-              <div className="flex gap-2 p-4 border-t vs-border flex-shrink-0">
-                <button onClick={handleUseEnhanced} className="flex-1 vs-btn py-2.5 rounded-xl text-xs font-semibold">
-                  Use it →
-                </button>
-                <button onClick={() => setShowEnhancePopup(false)} className="flex-1 vs-btn-outline py-2.5 rounded-xl text-xs font-semibold">
-                  Close
-                </button>
-              </div>
-            )}
-            {!enhancing && (enhancedPrompt.includes('failed') || enhancedPrompt.includes('error')) && (
-              <div className="p-4 border-t vs-border flex-shrink-0">
-                <button onClick={() => setShowEnhancePopup(false)} className="w-full vs-btn-outline py-2.5 rounded-xl text-xs font-semibold">
-                  Close
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* ── READ MORE ── */}
       {readMoreText && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-4 pb-24" onClick={() => setReadMoreText(null)}>
@@ -680,6 +595,69 @@ export default function CreatePage() {
               <button onClick={() => setConfirmClearRecent(false)} className="flex-1 vs-btn-outline px-4 py-2.5 rounded-xl text-sm font-semibold">Cancel</button>
               <button onClick={handleClearRecent} className="flex-1 vs-btn px-4 py-2.5 rounded-xl text-sm font-semibold">Clear</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── POLLEN POPUP — 2 variants ── */}
+      {showPollenPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6" onClick={() => setShowPollenPopup(false)}>
+          <div className="vs-card rounded-2xl p-6 max-w-sm w-full text-center border vs-border" onClick={e => e.stopPropagation()}>
+
+            {!userKey ? (
+              /* Variant 1: No key */
+              <>
+                <p className="text-4xl mb-3">🌼</p>
+                <h3 className="text-lg font-bold vs-text mb-2">Your Pollen Situation</h3>
+                <div className="vs-card border vs-border rounded-xl p-3 mb-4" style={{ background: 'var(--vs-bg)' }}>
+                  <p className="text-2xl font-black vs-gradient-text">
+                    {balance !== null ? balance.toFixed(3) : '...'}
+                  </p>
+                  <p className="text-[10px] vs-text-sub mt-1">pollen remaining</p>
+                </div>
+                <p className="text-xs vs-text-sub leading-relaxed mb-2">
+                  resets every hour whether you&apos;re ready or not 💀
+                </p>
+                <p className="text-xs vs-text-sub leading-relaxed mb-4">
+                  it&apos;s giving vending machine energy — insert prompt, get output, wait for refill. add your own key to skip the wait fr fr 🔑
+                </p>
+                <button onClick={() => { setShowPollenPopup(false); setShowKeyPopup(true) }}
+                  className="vs-btn w-full py-2.5 rounded-xl text-sm font-semibold mb-3">
+                  Add API Key — Skip the Queue
+                </button>
+                <button onClick={() => setShowPollenPopup(false)}
+                  className="w-full text-center text-[10px] vs-text-sub hover:underline">
+                  got it, i&apos;ll wait
+                </button>
+              </>
+            ) : (
+              /* Variant 2: Has key */
+              <>
+                <p className="text-4xl mb-3">✨</p>
+                <h3 className="text-lg font-bold vs-text mb-2">you&apos;re built different</h3>
+                <div className="vs-card border vs-border rounded-xl p-3 mb-4" style={{ background: 'var(--vs-bg)' }}>
+                  <p className="text-2xl font-black vs-gradient-text">
+                    {balance !== null ? balance.toFixed(3) : '...'}
+                  </p>
+                  <p className="text-[10px] vs-text-sub mt-1">pollen in your tank</p>
+                </div>
+                <p className="text-xs font-semibold vs-text-sub mb-1">
+                  🔑 key: {userKey.slice(0, 8)}...
+                </p>
+                <p className="text-xs vs-text-sub leading-relaxed mb-4">
+                  you brought your own key. respect. no hourly refreshes, no begging for pollen. while everyone else is waiting in line, you&apos;re just out here eating. 😤
+                </p>
+                <button
+                  onClick={() => { setShowPollenPopup(false); setKeyReason('manage'); setShowKeyPopup(true) }}
+                  className="vs-btn-outline w-full py-2.5 rounded-xl text-sm font-semibold mb-3">
+                  Manage Key
+                </button>
+                <button onClick={() => setShowPollenPopup(false)}
+                  className="w-full text-center text-[10px] vs-text-sub hover:underline">
+                  close
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
