@@ -27,7 +27,10 @@ const steps = [
 export default function Home() {
   return (
     <div>
-      <section className="vs-bg2 px-6 py-20 text-center">
+      {/* Spacer for fixed TopBar (only on this page) */}
+      <div className="h-14" />
+
+      <section className="vs-bg2 px-6 py-16 text-center">
         <p className="text-sm font-semibold vs-accent uppercase tracking-widest mb-4">
           dopamine delivery service
         </p>
@@ -36,7 +39,7 @@ export default function Home() {
           <span className="vs-gradient-text">It wants dopamine.</span>
         </h1>
         <p className="text-sm vs-text-sub mt-4 max-w-xs mx-auto leading-relaxed">
-          The shortest, most unhinged videos and AI tools on the internet. Completely free. No cap.
+          Videos to ruin your focus. AI tools to pretend you fix it. Completely free. No cap.
         </p>
         <div className="flex flex-wrap gap-3 justify-center mt-8">
           <a href="/videos" className="vs-btn px-6 py-3 rounded-xl font-semibold text-sm gap-2">
@@ -98,6 +101,9 @@ export default function Home() {
         <a href="/videos" className="vs-btn px-8 py-3 rounded-xl font-semibold text-sm inline-flex items-center gap-2">
           Get Started <ArrowRight size={16} />
         </a>
+        <p className="text-[10px] vs-text-sub mt-4 max-w-xs mx-auto leading-relaxed italic">
+          p.s. this whole thing runs on a phone, using free tiers from Google, some AI assistance, GitHub, Vercel &amp; Pollinations.ai — zero budget, full send. 🫡
+        </p>
       </section>
 
       <footer className="text-center px-6 py-8 border-t vs-border">
@@ -107,7 +113,7 @@ export default function Home() {
           <a href="/privacy" className="text-xs vs-text-sub hover:underline">Privacy</a>
         </div>
         <p className="text-xs vs-text-sub">
-          built different. fueled by chaos. deployed on vercel.
+          built on a phone. fueled by free tiers. still somehow works.
         </p>
       </footer>
     </div>
