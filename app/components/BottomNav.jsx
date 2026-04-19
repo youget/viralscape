@@ -1,27 +1,29 @@
 'use client'
-import { usePathname, useRouter } from 'next/navigation'
-import { Home, Play, Bot, Star, Gamepad2, ExternalLink } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { Home, Play, Bot, Star, Gamepad2, Sun, Moon } from 'lucide-react'
+import { useTheme } from './ThemeProvider'
 
 const navItems = [
-  { icon: Home,        label: 'Home',   href: '/' },
-  { icon: Play,        label: 'Videos', href: '/videos' },
-  { icon: Bot,         label: 'AI',     href: '/ai' },
-  { icon: Star,        label: 'Favs',   href: '/favorites' },
-  { icon: Gamepad2,    label: 'Game',   href: '/game' },
-  { icon: ExternalLink,label: 'Pollin', href: 'https://enter.pollinations.ai', external: true },
+  { icon: Home,     label: 'Home',   href: '/' },
+  { icon: Play,     label: 'Videos', href: '/videos' },
+  { icon: Bot,      label: 'AI',     href: '/ai' },
+  { icon: Star,     label: 'Favs',   href: '/favorites' },
+  { icon: Gamepad2, label: 'Game',   href: '/game' },
 ]
 
 export default function BottomNav() {
   const pathname = usePathname()
+  const { theme, toggleTheme } = useTheme()
+
+  // Hide on landing page — TopBar handles navigation there
+  if (pathname === '/') return null
 
   const handleNav = (item) => {
-    if (item.external) { window.open(item.href, '_blank'); return }
     window.location.href = item.href
   }
 
   const isActive = (item) => {
     if (item.href === '/') return pathname === '/'
-    if (item.external) return false
     return pathname?.startsWith(item.href)
   }
 
@@ -43,6 +45,17 @@ export default function BottomNav() {
             </button>
           )
         })}
+
+        {/* Theme toggle replaces Pollin external link */}
+        <button
+          onClick={toggleTheme}
+          className="flex flex-col items-center gap-1 p-2 rounded-xl transition-colors"
+          style={{ color: 'var(--vs-text-sub)' }}
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          <span className="text-[10px] font-semibold">Theme</span>
+        </button>
       </div>
     </nav>
   )
