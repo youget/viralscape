@@ -11,7 +11,7 @@ const USER_KEY_STORAGE = 'vs-user-polli-key'
 
 // ─── System prompts ──────────────────────────────────────────────────────────
 
-const SYSTEM_PERAMAL = `You are Mystica, an experienced tarot reader and astrologer with deep knowledge of tarot symbolism, astrology, numerology, and spiritual wisdom. You provide thoughtful, empowering readings and insights.
+const SYSTEM_FORTUNE = `You are Mystica, an experienced tarot reader and astrologer with deep knowledge of tarot symbolism, astrology, numerology, and spiritual wisdom. You provide thoughtful, empowering readings and insights.
 
 Guidelines:
 - Always respond in the same language the user writes in.
@@ -285,7 +285,7 @@ const BUILDER_MODELS = [
 // ─── Tab config ───────────────────────────────────────────────────────────────
 
 const TAB_CONFIG = {
-  peramal: {
+  fortune: {
     label: 'Fortune',
     model: 'nova-fast',
     welcomeContent: "Welcome, seeker. The cards are ready to reveal what lies ahead.\n\nAsk about love, career, life path — or simply request your horoscope for today. What would you like to explore?",
@@ -302,12 +302,12 @@ const TAB_CONFIG = {
   },
 }
 
-const SYSTEM_MAP = { peramal: SYSTEM_PERAMAL, story: SYSTEM_STORY, builder: SYSTEM_BUILDER }
+const SYSTEM_MAP = { fortune: SYSTEM_FORTUNE, story: SYSTEM_STORY, builder: SYSTEM_BUILDER }
 
 // ─── Tab icons ─────────────────────────────────────────────────────────────────
 
 const TAB_ICON_MAP = {
-  peramal: Stars,
+  fortune: Stars,
   story: MessageCircle,
   builder: Hammer,
   library: BookOpen,
@@ -509,13 +509,13 @@ function BuilderGate({ onStart }) {
 function ChatPageInner() {
   const searchParams = useSearchParams()
 
-  const [tab, setTab] = useState('peramal')
+  const [tab, setTab] = useState('fortune')
   const [messages, setMessages] = useState({
-    peramal: [makeWelcome('peramal')],
+    fortune: [makeWelcome('fortune')],
     story: [makeWelcome('story')],
     builder: [makeWelcome('builder')],
   })
-  const [sessionIds, setSessionIds] = useState({ peramal: null, story: null, builder: null })
+  const [sessionIds, setSessionIds] = useState({ fortune: null, story: null, builder: null })
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [balance, setBalance] = useState(null)
@@ -533,7 +533,7 @@ function ChatPageInner() {
 
   const [showPollenPopup, setShowPollenPopup] = useState(false)
 
-  const [savedIndicator, setSavedIndicator] = useState({ peramal: false, story: false, builder: false })
+  const [savedIndicator, setSavedIndicator] = useState({ fortune: false, story: false, builder: false })
   const [copiedId, setCopiedId] = useState(null)
   const [confirmClear, setConfirmClear] = useState(false)
   const [errorPopup, setErrorPopup] = useState(null)
@@ -548,7 +548,7 @@ function ChatPageInner() {
     const sessionId = searchParams.get('session')
     if (sessionId) loadFromHistory(parseInt(sessionId))
     const t = searchParams.get('tab')
-    if (t && ['peramal', 'story', 'builder', 'library'].includes(t)) setTab(t)
+    if (t && ['fortune', 'story', 'builder', 'library'].includes(t)) setTab(t)
   }, [])
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, loading, tab])
@@ -900,7 +900,7 @@ function ChatPageInner() {
           </div>
           <form onSubmit={handleSend} className="flex gap-2">
             <input ref={inputRef} type="text" value={input} onChange={e => setInput(e.target.value)}
-              placeholder={tab === 'peramal' ? 'Ask about your fortune...' : tab === 'story' ? 'Continue the story...' : 'Describe what to build...'}
+              placeholder={tab === 'fortune' ? 'Ask about your fortune...' : tab === 'story' ? 'Continue the story...' : 'Describe what to build...'}
               className="flex-1 py-3 px-4 rounded-xl border text-sm vs-text outline-none"
               style={{ backgroundColor: 'var(--vs-card)', borderColor: 'var(--vs-border)' }} />
             <button type="submit" disabled={loading || !input.trim()}
