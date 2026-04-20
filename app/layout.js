@@ -12,34 +12,34 @@ export const viewport = {
   userScalable: false,
   themeColor: [
     { media: '(prefers-color-scheme: dark)', color: '#0B1121' },
-    { media: '(prefers-color-scheme: light)', color: '#FFF5F7' },
+    { media: '(prefers-color-scheme: light)', color: '#F4F4F5' },
   ],
 }
 
 export const metadata = {
-  title: 'ViralScape',
-  description: 'Your brain called. It wants dopamine. Viral videos + AI tools. Completely free. No cap.',
+  title: 'VibeScape',
+  description: 'Your brain called. It wants good vibes. AI tools + videos to derail your productivity. Completely free. No cap.',
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon.svg',
     apple: '/favicon.svg',
   },
   openGraph: {
-    title: 'ViralScape',
-    description: 'Your brain called. It wants dopamine. The shortest, most unhinged videos and AI tools on the internet.',
-    siteName: 'ViralScape',
+    title: 'VibeScape',
+    description: 'Your brain called. It wants good vibes. AI tools, videos, games — built on a phone, running on free tiers.',
+    siteName: 'VibeScape',
     type: 'website',
-    url: 'https://viralscape.vercel.app',
+    url: 'https://vibescape.vercel.app',
   },
   twitter: {
     card: 'summary',
-    title: 'ViralScape',
-    description: 'Viral videos + AI tools. Completely free. No cap.',
+    title: 'VibeScape',
+    description: 'Videos + AI tools. Completely free. No cap.',
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'ViralScape',
+    title: 'VibeScape',
   },
 }
 
