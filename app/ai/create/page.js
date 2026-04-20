@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Sparkles, Shuffle, Download, Loader2, ChevronDown, ExternalLink,
-  RefreshCw, Play, Film, ImageIcon, X, Heart, Copy, Trash2, ArrowRight } from 'lucide-react'
+  RefreshCw, Play, Film, ImageIcon, X, Heart, Copy, Trash2, ArrowRight,
+  Mic, Wand2, Check } from 'lucide-react'
 import { toast } from '../../components/Toast'
 import { saveImage, getRecentImages, compressImage, compressImageToSize, toggleFavorite, clearRecentOnly } from '../../lib/imagedb'
 
@@ -79,10 +80,16 @@ const ERR = {
   api_error:      { emoji: '🫣', title: 'Something went sideways',  desc: 'Give it another shot.' },
 }
 
-function getUserKey()  { try { return localStorage.getItem(USER_KEY_STORAGE) || '' } catch { return '' } }
+function getUserKey()   { try { return localStorage.getItem(USER_KEY_STORAGE) || '' } catch { return '' } }
 function saveUserKey(k) { try { localStorage.setItem(USER_KEY_STORAGE, k) } catch {} }
 function clearUserKey() { try { localStorage.removeItem(USER_KEY_STORAGE) } catch {} }
 function randomLoadingMsg() { return LOADING_MSGS[Math.floor(Math.random() * LOADING_MSGS.length)] }
+
+const tabs = [
+  { id: 'image', label: 'Image', icon: ImageIcon },
+  { id: 'audio', label: 'Audio', icon: Mic },
+  { id: 'video', label: 'Video', icon: Film },
+]
 
 export default function CreatePage() {
   const [tab, setTab] = useState('image')
@@ -95,8 +102,6 @@ export default function CreatePage() {
   const [errorPopup, setErrorPopup] = useState(null)
   const [readMoreText, setReadMoreText] = useState(null)
   const [confirmClearRecent, setConfirmClearRecent] = useState(false)
-
-  // Pollen popup
   const [showPollenPopup, setShowPollenPopup] = useState(false)
 
   // Image state
@@ -110,9 +115,14 @@ export default function CreatePage() {
   const [imgResult, setImgResult] = useState(null)
   const [imgError, setImgError] = useState(null)
   const [loadingMsg, setLoadingMsg] = useState('')
-  const [enhanceOn, setEnhanceOn] = useState(false)
   const [recent, setRecent] = useState([])
   const [isFav, setIsFav] = useState(false)
+
+  // Enhance popup state
+  const [showEnhancePopup, setShowEnhancePopup] = useState(false)
+  const [enhancedPrompt, setEnhancedPrompt] = useState('')
+  const [enhanceLoading, setEnhanceLoading] = useState(false)
+  const [originalPromptForEnhance, setOriginalPromptForEnhance] = useState('')
 
   // Audio state
   const [voiceMode, setVoiceMode] = useState('tts')
@@ -189,6 +199,55 @@ export default function CreatePage() {
     setImgModel(m.id); setShowModelPicker(false)
   }
 
+  // ── Enhance prompt via AI ──────────────────────────────────────────────────
+
+  async function doEnhancePrompt(promptToEnhance) {
+    setEnhanceLoading(true)
+    setEnhancedPrompt('')
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert AI image prompt engineer. Rewrite the given prompt to be vivid, specific, and highly effective for AI image generation. Weave in details about: lighting, mood, composition, camera angle, color palette, textures, and atmosphere. Keep it under 120 words. Return ONLY the enhanced prompt — no preamble, no explanation, nothing else.'
+            },
+            { role: 'user', content: promptToEnhance }
+          ],
+          model: 'gemini-fast'
+        })
+      })
+      const data = await res.json()
+      setEnhancedPrompt(data.result?.trim() || '')
+    } catch {
+      setEnhancedPrompt('')
+    }
+    setEnhanceLoading(false)
+  }
+
+  async function handleEnhanceClick() {
+    if (!imgPrompt.trim()) return
+    const original = imgPrompt.trim()
+    setOriginalPromptForEnhance(original)
+    setShowEnhancePopup(true)
+    await doEnhancePrompt(original)
+  }
+
+  async function handleReEnhance() {
+    await doEnhancePrompt(originalPromptForEnhance)
+  }
+
+  function handleUseEnhanced() {
+    if (enhancedPrompt) setImgPrompt(enhancedPrompt)
+    setShowEnhancePopup(false)
+    setEnhancedPrompt('')
+  }
+
+  // ── Image generate ─────────────────────────────────────────────────────────
+
   async function handleGenerate(overrideSeed) {
     if (!imgPrompt.trim() || imgLoading) return
     if (currentImgModel.tier === 'byop' && !hasKey()) { openKeyPopup('byop_image', () => doGenerate(overrideSeed)); return }
@@ -207,7 +266,7 @@ export default function CreatePage() {
       const res = await fetch('/api/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: fullPrompt, model: imgModel, width: size.w, height: size.h, seed, enhance: enhanceOn, ...(k && { userKey: k }) }),
+        body: JSON.stringify({ prompt: fullPrompt, model: imgModel, width: size.w, height: size.h, seed, ...(k && { userKey: k }) }),
       })
 
       if (!res.ok) {
@@ -236,7 +295,7 @@ export default function CreatePage() {
   }
 
   function handleRegenerate() { if (imgResult) handleGenerate(imgResult.seed) }
-  function handleDownload() { if (!imgResult) return; const a = document.createElement('a'); a.href = imgResult.url; a.download = `viralscape-${Date.now()}.png`; a.click() }
+  function handleDownload() { if (!imgResult) return; const a = document.createElement('a'); a.href = imgResult.url; a.download = `vibescape-${Date.now()}.png`; a.click() }
 
   function handleClickRecent(item) {
     setImgPrompt(item.prompt); if (item.style) setImgStyle(item.style)
@@ -281,20 +340,13 @@ export default function CreatePage() {
     setVideoLoading(false)
   }
 
-  const tabs = [
-    { id: 'image', label: 'Image' },
-    { id: 'audio', label: 'Audio' },
-    { id: 'video', label: 'Video' },
-  ]
-
   return (
     <div className="px-4 py-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-black vs-text text-center mb-1">AI <span className="vs-gradient-text">Playground</span></h1>
       <p className="text-xs vs-text-sub text-center mb-4">create unhinged stuff with artificial brainpower</p>
 
-      {/* ── Balance bar — pollen left, chat tools right ── */}
+      {/* ── Balance bar ── */}
       <div className="flex items-center justify-between gap-2 mb-5">
-        {/* Pollen pill — left */}
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full vs-card border vs-border text-[10px]">
           {balance !== null
             ? <button onClick={() => setShowPollenPopup(true)} className="vs-text-sub hover:underline">
@@ -313,24 +365,25 @@ export default function CreatePage() {
             </button>
           )}
         </div>
-        {/* Chat Tools — right */}
-        <a
-          href="/ai/chat"
-          className="flex items-center gap-1 px-3 py-1.5 rounded-full vs-card border vs-border text-[10px] font-semibold vs-text hover:opacity-75 transition-opacity"
-        >
+        <a href="/ai/chat"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-full vs-card border vs-border text-[10px] font-semibold vs-text hover:opacity-75 transition-opacity">
           Chat Tools <ArrowRight size={10} />
         </a>
       </div>
 
-      {/* Tab bar */}
+      {/* Tab bar with icons */}
       <div className="flex gap-1 mb-6 vs-card border vs-border rounded-xl p-1">
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className="flex-1 py-2.5 rounded-lg text-xs font-bold transition-all"
-            style={{ backgroundColor: tab === t.id ? 'var(--vs-accent)' : 'transparent', color: tab === t.id ? '#fff' : 'var(--vs-text-sub)' }}>
-            {t.label}
-          </button>
-        ))}
+        {tabs.map(t => {
+          const Icon = t.icon
+          return (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className="flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1"
+              style={{ backgroundColor: tab === t.id ? 'var(--vs-accent)' : 'transparent', color: tab === t.id ? '#fff' : 'var(--vs-text-sub)' }}>
+              <Icon size={11} />
+              {t.label}
+            </button>
+          )
+        })}
       </div>
 
       {/* ── IMAGE ── */}
@@ -377,14 +430,21 @@ export default function CreatePage() {
               className="w-full py-3 px-4 rounded-xl vs-card border vs-border text-sm vs-text outline-none resize-none"
               style={{ backgroundColor: 'var(--vs-card)' }} />
             <div className="grid grid-cols-3 gap-2 mt-2">
+              {/* Random */}
               <button onClick={() => setImgPrompt(RANDOM_PROMPTS[Math.floor(Math.random() * RANDOM_PROMPTS.length)])}
                 className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover">
                 <Shuffle size={12} /> Random
               </button>
-              <label className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub cursor-pointer">
-                <input type="checkbox" checked={enhanceOn} onChange={e => setEnhanceOn(e.target.checked)} className="w-3.5 h-3.5 rounded" />
-                Enhance
-              </label>
+              {/* Enhance — now a real button, triggers AI popup */}
+              <button
+                onClick={handleEnhanceClick}
+                disabled={!imgPrompt.trim()}
+                className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover transition-all"
+                style={{ opacity: imgPrompt.trim() ? 1 : 0.4 }}
+              >
+                <Wand2 size={12} /> Enhance
+              </button>
+              {/* Style */}
               <div className="relative">
                 <button onClick={() => setShowStylePicker(!showStylePicker)}
                   className="w-full flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold vs-card border vs-border vs-text-sub vs-hover">
@@ -520,7 +580,7 @@ export default function CreatePage() {
           {voiceResult && (
             <div className="vs-card border vs-border rounded-2xl p-4 mb-4">
               <audio controls src={voiceResult} className="w-full" />
-              <a href={voiceResult} download={`viralscape-${voiceMode}-${Date.now()}.mp3`}
+              <a href={voiceResult} download={`vibescape-${voiceMode}-${Date.now()}.mp3`}
                 className="vs-btn-outline w-full py-2 rounded-xl text-xs font-semibold mt-3 gap-1 flex items-center justify-center">
                 <Download size={14} /> Download
               </a>
@@ -557,7 +617,7 @@ export default function CreatePage() {
             <div className="vs-card border vs-border rounded-2xl overflow-hidden mb-4">
               <video controls src={videoResult} className="w-full" />
               <div className="p-3">
-                <a href={videoResult} download={`viralscape-video-${Date.now()}.mp4`}
+                <a href={videoResult} download={`vibescape-video-${Date.now()}.mp4`}
                   className="vs-btn w-full py-2 rounded-xl text-xs font-semibold gap-1 flex items-center justify-center">
                   <Download size={14} /> Download
                 </a>
@@ -565,6 +625,70 @@ export default function CreatePage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── ENHANCE POPUP ── */}
+      {showEnhancePopup && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 px-4 pb-24" onClick={() => { if (!enhanceLoading) setShowEnhancePopup(false) }}>
+          <div className="vs-card rounded-2xl border vs-border w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b vs-border">
+              <div className="flex items-center gap-2">
+                <Wand2 size={14} style={{ color: 'var(--vs-accent)' }} />
+                <p className="text-sm font-bold vs-text">Prompt Enhanced</p>
+              </div>
+              {!enhanceLoading && (
+                <button onClick={() => setShowEnhancePopup(false)} className="vs-text-sub p-1 rounded-lg vs-hover">
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+
+            <div className="p-4">
+              {enhanceLoading ? (
+                <div className="flex flex-col items-center py-8 gap-3">
+                  <Loader2 size={28} className="animate-spin vs-text-sub" />
+                  <p className="text-xs vs-text-sub">cooking up something better...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Original → Enhanced */}
+                  <div className="mb-3">
+                    <p className="text-[9px] font-bold vs-text-sub uppercase tracking-wider mb-1.5">Original</p>
+                    <p className="text-[11px] vs-text-sub leading-relaxed line-clamp-2">{originalPromptForEnhance}</p>
+                  </div>
+                  <div className="mb-4">
+                    <p className="text-[9px] font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--vs-accent)' }}>Enhanced ✨</p>
+                    <div className="rounded-xl p-3 max-h-36 overflow-y-auto" style={{ background: 'var(--vs-bg)' }}>
+                      <p className="text-[11px] vs-text leading-relaxed">
+                        {enhancedPrompt || 'No result. Try re-enhancing.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleUseEnhanced}
+                      disabled={!enhancedPrompt}
+                      className="flex-1 vs-btn py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1"
+                      style={{ opacity: enhancedPrompt ? 1 : 0.4 }}>
+                      <Check size={12} /> Use it
+                    </button>
+                    <button
+                      onClick={handleReEnhance}
+                      className="flex-1 vs-btn-outline py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1">
+                      <RefreshCw size={12} /> Re-enhance
+                    </button>
+                    <button
+                      onClick={() => setShowEnhancePopup(false)}
+                      className="px-3 py-2.5 rounded-xl text-xs font-semibold vs-text-sub border vs-border vs-hover">
+                      Nope
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -603,59 +727,37 @@ export default function CreatePage() {
       {showPollenPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6" onClick={() => setShowPollenPopup(false)}>
           <div className="vs-card rounded-2xl p-6 max-w-sm w-full text-center border vs-border" onClick={e => e.stopPropagation()}>
-
             {!userKey ? (
-              /* Variant 1: No key */
               <>
                 <p className="text-4xl mb-3">🌼</p>
                 <h3 className="text-lg font-bold vs-text mb-2">Your Pollen Situation</h3>
                 <div className="vs-card border vs-border rounded-xl p-3 mb-4" style={{ background: 'var(--vs-bg)' }}>
-                  <p className="text-2xl font-black vs-gradient-text">
-                    {balance !== null ? balance.toFixed(3) : '...'}
-                  </p>
+                  <p className="text-2xl font-black vs-gradient-text">{balance !== null ? balance.toFixed(3) : '...'}</p>
                   <p className="text-[10px] vs-text-sub mt-1">pollen remaining</p>
                 </div>
-                <p className="text-xs vs-text-sub leading-relaxed mb-2">
-                  resets every hour whether you&apos;re ready or not 💀
-                </p>
-                <p className="text-xs vs-text-sub leading-relaxed mb-4">
-                  it&apos;s giving vending machine energy — insert prompt, get output, wait for refill. add your own key to skip the wait fr fr 🔑
-                </p>
+                <p className="text-xs vs-text-sub leading-relaxed mb-2">resets every hour whether you&apos;re ready or not 💀</p>
+                <p className="text-xs vs-text-sub leading-relaxed mb-4">it&apos;s giving vending machine energy — insert prompt, get output, wait for refill. add your own key to skip the wait fr fr 🔑</p>
                 <button onClick={() => { setShowPollenPopup(false); setShowKeyPopup(true) }}
                   className="vs-btn w-full py-2.5 rounded-xl text-sm font-semibold mb-3">
                   Add API Key — Skip the Queue
                 </button>
-                <button onClick={() => setShowPollenPopup(false)}
-                  className="w-full text-center text-[10px] vs-text-sub hover:underline">
-                  got it, i&apos;ll wait
-                </button>
+                <button onClick={() => setShowPollenPopup(false)} className="w-full text-center text-[10px] vs-text-sub hover:underline">got it, i&apos;ll wait</button>
               </>
             ) : (
-              /* Variant 2: Has key */
               <>
                 <p className="text-4xl mb-3">✨</p>
                 <h3 className="text-lg font-bold vs-text mb-2">you&apos;re built different</h3>
                 <div className="vs-card border vs-border rounded-xl p-3 mb-4" style={{ background: 'var(--vs-bg)' }}>
-                  <p className="text-2xl font-black vs-gradient-text">
-                    {balance !== null ? balance.toFixed(3) : '...'}
-                  </p>
+                  <p className="text-2xl font-black vs-gradient-text">{balance !== null ? balance.toFixed(3) : '...'}</p>
                   <p className="text-[10px] vs-text-sub mt-1">pollen in your tank</p>
                 </div>
-                <p className="text-xs font-semibold vs-text-sub mb-1">
-                  🔑 key: {userKey.slice(0, 8)}...
-                </p>
-                <p className="text-xs vs-text-sub leading-relaxed mb-4">
-                  you brought your own key. respect. no hourly refreshes, no begging for pollen. while everyone else is waiting in line, you&apos;re just out here eating. 😤
-                </p>
-                <button
-                  onClick={() => { setShowPollenPopup(false); setKeyReason('manage'); setShowKeyPopup(true) }}
+                <p className="text-xs font-semibold vs-text-sub mb-1">🔑 key: {userKey.slice(0, 8)}...</p>
+                <p className="text-xs vs-text-sub leading-relaxed mb-4">you brought your own key. respect. no hourly refreshes, no begging for pollen. while everyone else is waiting in line, you&apos;re just out here eating. 😤</p>
+                <button onClick={() => { setShowPollenPopup(false); setKeyReason('manage'); setShowKeyPopup(true) }}
                   className="vs-btn-outline w-full py-2.5 rounded-xl text-sm font-semibold mb-3">
                   Manage Key
                 </button>
-                <button onClick={() => setShowPollenPopup(false)}
-                  className="w-full text-center text-[10px] vs-text-sub hover:underline">
-                  close
-                </button>
+                <button onClick={() => setShowPollenPopup(false)} className="w-full text-center text-[10px] vs-text-sub hover:underline">close</button>
               </>
             )}
           </div>
@@ -701,9 +803,7 @@ export default function CreatePage() {
               </div>
             )}
             <button onClick={() => { setShowKeyPopup(false); setPendingAction(null) }}
-              className="w-full text-center text-[10px] vs-text-sub hover:underline mt-3">
-              Close
-            </button>
+              className="w-full text-center text-[10px] vs-text-sub hover:underline mt-3">Close</button>
           </div>
         </div>
       )}
