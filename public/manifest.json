@@ -1,7 +1,7 @@
 {
-  "name": "ViralScape",
-  "short_name": "ViralScape",
-  "description": "Your brain called. It wants dopamine. Viral videos + AI tools.",
+  "name": "VibeScape",
+  "short_name": "VibeScape",
+  "description": "Your brain called. It wants good vibes. AI tools + videos, completely free.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B1121",
