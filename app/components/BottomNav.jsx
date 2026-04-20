@@ -28,35 +28,40 @@ export default function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 vs-glass border-t vs-border">
-      <div className="flex items-center justify-around h-[68px] max-w-lg mx-auto px-2">
-        {navItems.map((item) => {
-          const Icon = item.icon
-          const active = isActive(item)
-          return (
-            <button
-              key={item.href}
-              onClick={() => handleNav(item)}
-              className="flex flex-col items-center gap-1 p-2 rounded-xl transition-colors"
-              style={{ color: active ? 'var(--vs-accent)' : 'var(--vs-text-sub)' }}
-            >
-              <Icon size={20} />
-              <span className="text-[10px] font-semibold">{item.label}</span>
-            </button>
-          )
-        })}
+    <>
+      {/* Spacer so page content isn't hidden behind the fixed nav */}
+      <div className="h-[68px]" />
 
-        {/* Theme toggle replaces Pollin external link */}
-        <button
-          onClick={toggleTheme}
-          className="flex flex-col items-center gap-1 p-2 rounded-xl transition-colors"
-          style={{ color: 'var(--vs-text-sub)' }}
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-          <span className="text-[10px] font-semibold">Theme</span>
-        </button>
-      </div>
-    </nav>
+      <nav className="fixed bottom-0 left-0 right-0 z-40 vs-glass border-t vs-border">
+        <div className="flex items-center justify-around h-[68px] max-w-lg mx-auto px-2">
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const active = isActive(item)
+            return (
+              <button
+                key={item.href}
+                onClick={() => handleNav(item)}
+                className="flex flex-col items-center gap-1 p-2 rounded-xl transition-colors"
+                style={{ color: active ? 'var(--vs-accent)' : 'var(--vs-text-sub)' }}
+              >
+                <Icon size={20} />
+                <span className="text-[10px] font-semibold">{item.label}</span>
+              </button>
+            )
+          })}
+
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            className="flex flex-col items-center gap-1 p-2 rounded-xl transition-colors"
+            style={{ color: 'var(--vs-text-sub)' }}
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            <span className="text-[10px] font-semibold">Theme</span>
+          </button>
+        </div>
+      </nav>
+    </>
   )
 }
