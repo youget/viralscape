@@ -1,9 +1,10 @@
 import { Flame, Zap, Heart, ArrowRight } from 'lucide-react'
+import VibeChar from './components/VibeChar'
 
 const features = [
   {
     icon: Flame,
-    title: 'Vibes Videos',
+    title: 'Videos',
     desc: "Under 2 minutes. Because let's be honest, your attention span clocked out after the first sentence.",
   },
   {
@@ -27,21 +28,27 @@ const steps = [
 export default function Home() {
   return (
     <div>
-      {/* Spacer for fixed TopBar (only on this page) */}
+      {/* Spacer for fixed TopBar (landing page only) */}
       <div className="h-14" />
 
-      <section className="vs-bg2 px-6 py-16 text-center">
-        <p className="text-sm font-semibold vs-accent uppercase tracking-widest mb-4">
+      <section className="vs-bg2 px-6 pt-12 pb-14 text-center">
+        <p className="text-sm font-semibold vs-accent uppercase tracking-widest mb-3">
           dopamine delivery service
         </p>
         <h1 className="text-4xl md:text-5xl font-black vs-text leading-tight max-w-md mx-auto">
           Your brain called.{' '}
-          <span className="vs-gradient-text">It wants dopamine.</span>
+          <span className="vs-gradient-text">It wants good vibes.</span>
         </h1>
-        <p className="text-sm vs-text-sub mt-4 max-w-xs mx-auto leading-relaxed">
+
+        {/* ── Mascot — only on landing page ── */}
+        <div className="flex justify-center mt-6 mb-4">
+          <VibeChar />
+        </div>
+
+        <p className="text-sm vs-text-sub mt-2 max-w-xs mx-auto leading-relaxed">
           Videos to ruin your focus. AI tools to pretend you fix it. Completely free. No cap.
         </p>
-        <div className="flex flex-wrap gap-3 justify-center mt-8">
+        <div className="flex flex-wrap gap-3 justify-center mt-6">
           <a href="/videos" className="vs-btn px-6 py-3 rounded-xl font-semibold text-sm gap-2">
             Watch Videos
           </a>
@@ -59,13 +66,10 @@ export default function Home() {
           {features.map((f, i) => {
             const Icon = f.icon
             return (
-              <div
-                key={i}
-                className="vs-card border vs-border rounded-2xl p-5 transition-transform hover:scale-[1.02]"
-              >
+              <div key={i} className="vs-card border vs-border rounded-2xl p-5 transition-transform hover:scale-[1.02]">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
-                       style={{ backgroundColor: 'var(--vs-accent)' }}>
+                    style={{ backgroundColor: 'var(--vs-accent)' }}>
                     <Icon size={20} />
                   </div>
                   <h3 className="font-bold vs-text">{f.title}</h3>
@@ -95,9 +99,7 @@ export default function Home() {
         <h2 className="text-2xl font-black vs-text mb-3">
           Ready to waste time <span className="vs-gradient-text">productively</span>?
         </h2>
-        <p className="text-sm vs-text-sub mb-8">
-          No signup. No ads (yet). Just vibes.
-        </p>
+        <p className="text-sm vs-text-sub mb-8">No signup. No ads (yet). Just vibes.</p>
         <a href="/videos" className="vs-btn px-8 py-3 rounded-xl font-semibold text-sm inline-flex items-center gap-2">
           Get Started <ArrowRight size={16} />
         </a>
@@ -112,9 +114,7 @@ export default function Home() {
           <a href="/disclaimer" className="text-xs vs-text-sub hover:underline">Disclaimer</a>
           <a href="/privacy" className="text-xs vs-text-sub hover:underline">Privacy</a>
         </div>
-        <p className="text-xs vs-text-sub">
-          built on a phone. fueled by free tiers. still somehow works.
-        </p>
+        <p className="text-xs vs-text-sub">built on a phone. fueled by free tiers. still somehow works.</p>
       </footer>
     </div>
   )
